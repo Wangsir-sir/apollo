@@ -99,7 +99,7 @@ BridgeProtoDiserializedBuf<T>
       return proto;
     }
   }
-  ADEBUG << "New BridgeProtoDiserializedBuf created!";
+  AWARN << "New BridgeProtoDiserializedBuf created!";
   BridgeProtoDiserializedBuf<T> *proto_buf = new BridgeProtoDiserializedBuf<T>;
   if (!proto_buf) {
     return nullptr;
@@ -186,12 +186,14 @@ bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {
   char *buf = proto_buf->GetBuf(header.GetFramePos());
   memcpy(buf, cursor, header.GetFrameSize());
   proto_buf->UpdateStatus(header.GetIndex());
-  ADEBUG << "total recv " << bytes 
+  AWARN << "-----------------Header Info-----------------------"
+        << " \ntotal recv " << bytes 
         << " \nproto name : " << header.GetMsgName().c_str() 
         << " \nproto sequence num: " << header.GetMsgID()
         << " \nproto total frames: " << header.GetTotalFrames()
         << " \nproto frame index: " << header.GetIndex()
-        << " \nstatus: " << proto_buf->IsReadyDiserialize();
+        << " \nstatus: " << proto_buf->IsReadyDiserialize()
+        << "--------------------------------------------------";
 
   if (proto_buf->IsReadyDiserialize()) {
     auto pb_msg = std::make_shared<T>();
