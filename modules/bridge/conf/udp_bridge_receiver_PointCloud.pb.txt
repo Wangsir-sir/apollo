@@ -1,0 +1,4 @@
+topic_name: "/apollo/sensor/lidar128/compensator/PointCloud2"
+bind_port: 8900
+proto_name: "PointCloud"
+enable_timeout: false

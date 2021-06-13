@@ -78,6 +78,7 @@ BridgeProtoDiserializedBuf<T>
     *UDPBridgeReceiverComponent<T>::CreateBridgeProtoBuf(
         const BridgeHeader &header) {
   if (IsTimeout(header.GetTimeStamp())) {
+    ADEBUG << "Time out!";
     typename std::vector<BridgeProtoDiserializedBuf<T> *>::iterator itor =
         proto_list_.begin();
     for (; itor != proto_list_.end();) {
@@ -94,9 +95,11 @@ BridgeProtoDiserializedBuf<T>
 
   for (auto proto : proto_list_) {
     if (proto->IsTheProto(header)) {
+      ADEBUG << "Find the BridgeProtoDiserializedBuf!";
       return proto;
     }
   }
+  ADEBUG << "New BridgeProtoDiserializedBuf created!";
   BridgeProtoDiserializedBuf<T> *proto_buf = new BridgeProtoDiserializedBuf<T>;
   if (!proto_buf) {
     return nullptr;
@@ -141,7 +144,6 @@ bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {
   bytes =
       static_cast<int>(recvfrom(fd, total_buf, total_recv, 0,
                                 (struct sockaddr *)&client_addr, &sock_len));
-  ADEBUG << "total recv " << bytes;
   if (bytes <= 0 || bytes > total_recv) {
     return false;
   }
@@ -172,10 +174,7 @@ bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {
     return false;
   }
 
-  ADEBUG << "proto name : " << header.GetMsgName().c_str();
-  ADEBUG << "proto sequence num: " << header.GetMsgID();
-  ADEBUG << "proto total frames: " << header.GetTotalFrames();
-  ADEBUG << "proto frame index: " << header.GetIndex();
+
 
   std::lock_guard<std::mutex> lock(mutex_);
   BridgeProtoDiserializedBuf<T> *proto_buf = CreateBridgeProtoBuf(header);
@@ -187,10 +186,18 @@ bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {
   char *buf = proto_buf->GetBuf(header.GetFramePos());
   memcpy(buf, cursor, header.GetFrameSize());
   proto_buf->UpdateStatus(header.GetIndex());
+  ADEBUG << "total recv " << bytes 
+        << " \nproto name : " << header.GetMsgName().c_str() 
+        << " \nproto sequence num: " << header.GetMsgID()
+        << " \nproto total frames: " << header.GetTotalFrames()
+        << " \nproto frame index: " << header.GetIndex()
+        << " \nstatus: " << proto_buf->IsReadyDiserialize();
+
   if (proto_buf->IsReadyDiserialize()) {
     auto pb_msg = std::make_shared<T>();
     proto_buf->Diserialized(pb_msg);
     writer_->Write(pb_msg);
+    AWARN << "published!";
     RemoveInvalidBuf(proto_buf->GetMsgID());
     RemoveItem(&proto_list_, proto_buf);
   }
@@ -217,5 +224,6 @@ bool UDPBridgeReceiverComponent<T>::RemoveInvalidBuf(uint32_t msg_id) {
 }
 
 BRIDGE_RECV_IMPL(canbus::Chassis);
+BRIDGE_RECV_IMPL(drivers::PointCloud);
 }  // namespace bridge
 }  // namespace apollo

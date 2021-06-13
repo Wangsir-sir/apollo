@@ -130,6 +130,8 @@ bool BridgeProtoDiserializedBuf<T>::IsTheProto(const BridgeHeader &header) {
       sequence_num_ == header.GetMsgID()) {
     return true;
   }
+  ADEBUG << "\nproto_name_:" << proto_name_ << " MsgName :" << header.GetMsgName()
+         << "\nsequence_num_" << sequence_num_ << " MsgID: " << header.GetMsgID();
   return false;
 }
 

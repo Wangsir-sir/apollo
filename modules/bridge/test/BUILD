@@ -14,11 +14,22 @@ cc_binary(
 )
 
 cc_binary(
-    name = "bridge_sender_test",
-    srcs = ["bridge_sender_test.cc"],
+    name = "bridge_sender_test_Chassis",
+    srcs = ["bridge_sender_test_Chassis.cc"],
     deps = [
         "//cyber",
         "//modules/bridge:udp_bridge",
+    ],
+)
+
+cc_binary(
+    name = "bridge_sender_test_PointCloud",
+    srcs = ["bridge_sender_test_PointCloud.cc"],
+    deps = [
+        "//cyber",
+        "//modules/bridge:udp_bridge",
+        "//modules/drivers/proto:pointcloud_cc_proto",
+
     ],
 )
 

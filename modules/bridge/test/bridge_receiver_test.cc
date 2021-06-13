@@ -111,6 +111,7 @@ void *pthread_handle_message(void *pfd) {
     ADEBUG << "steering percentage: " << pb_msg->steering_percentage();
     ADEBUG << "steering torque nm: " << pb_msg->steering_torque_nm();
     ADEBUG << "parking brake: " << pb_msg->parking_brake();
+    ADEBUG << "---------------------------------------------------------------------------------";
   }
   pthread_exit(nullptr);
 }

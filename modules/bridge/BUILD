@@ -69,6 +69,7 @@ cc_library(
     deps = [
         ":udp_bridge",
         "//modules/bridge/common:udp_listener",
+        "//modules/drivers/proto:pointcloud_cc_proto",
     ],
 )
 

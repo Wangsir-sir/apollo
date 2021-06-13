@@ -1,7 +1,14 @@
 <cyber>
     <module>
-        <name>bridge_receiver</name>
-        <dag_conf>/apollo/modules/bridge/dag/bridge_receiver.dag</dag_conf>
-        <process_name>udp_bridge_receiver</process_name>
+        <name>bridge_receiver1</name>
+        <dag_conf>/apollo/modules/bridge/dag/bridge_receiver_Chassis.dag</dag_conf>
+        <process_name>udp_bridge_receiver1</process_name>
     </module>
+
+    <module>
+        <name>bridge_receiver2</name>
+        <dag_conf>/apollo/modules/bridge/dag/bridge_receiver_PointCloud.dag</dag_conf>
+        <process_name>udp_bridge_receiver_PointCloud</process_name>
+     </module>
+
 </cyber>

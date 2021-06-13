@@ -83,6 +83,8 @@ bool send(const std::string &remote_ip, uint16_t remote_port, uint32_t count) {
 
     apollo::bridge::BridgeProtoSerializedBuf<apollo::canbus::Chassis> proto_buf;
     proto_buf.Serialize(pb_msg, "Chassis");
+    // AINFO  <<  "Count:"<<proto_buf.GetSerializedBufCount();
+    // AINFO << "Size 0 :" << proto_buf.GetSerializedBufSize(0) << " | 1: " << proto_buf.GetSerializedBufSize(1);
     for (size_t j = 0; j < proto_buf.GetSerializedBufCount(); j++) {
       ssize_t nbytes = send(sock_fd, proto_buf.GetSerializedBuf(j),
                             proto_buf.GetSerializedBufSize(j), 0);
@@ -90,24 +92,23 @@ bool send(const std::string &remote_ip, uint16_t remote_port, uint32_t count) {
         ADEBUG << "sent msg failed ";
         break;
       }
-      ADEBUG << "sent " << nbytes << " bytes to server with sequence num " << i;
+      AWARN << "Epoch:"<< i << "\t "<<"total frames: " << proto_buf.GetSerializedBufCount() ;
+      AWARN << "Epoch:"<< i << "\t "<<"sent " << nbytes << " bytes to server with frame " << j;
+      // std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     close(sock_fd);
 
     // 1000Hz
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
   }
   return true;
 }
 
 int main(int argc, char *argv[]) {
-  uint32_t count = 0;
-  if (argc < 2) {
-    count = 10000;
-  } else {
-    count = atoi(argv[1]);
-    CHECK_LE(count, 20000U);
-  }
-  send("127.0.0.1", 8900, count);
+  uint32_t count = 10000;
+
+  uint16_t port = (uint16_t) atoi(argv[1]);
+
+  send("127.0.0.1", port, count);
   return 0;
 }

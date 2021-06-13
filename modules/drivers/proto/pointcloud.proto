@@ -1,21 +1,24 @@
+// file : apollo/modules/drivers/proto/pointcloud.proto
 syntax = "proto2";
 package apollo.drivers;
 
 import "modules/common/proto/header.proto";
 
+// 单独的一个激光点
 message PointXYZIT {
-  optional float x = 1 [default = nan];
-  optional float y = 2 [default = nan];
-  optional float z = 3 [default = nan];
-  optional uint32 intensity = 4 [default = 0];
-  optional uint64 timestamp = 5 [default = 0];
+  optional float x = 1 [default = nan];///< 激光点的x坐标
+  optional float y = 2 [default = nan];///< 激光点的y坐标
+  optional float z = 3 [default = nan];///< 激光点的z坐标
+  optional uint32 intensity = 4 [default = 0];///< 激光点的强度信息
+  optional uint64 timestamp = 5 [default = 0];///< 激光点的时间戳
 }
 
+// 激光点云
 message PointCloud {
-  optional apollo.common.Header header = 1;
-  optional string frame_id = 2;
+  optional apollo.common.Header header = 1;///< 点云的首部
+  optional string frame_id = 2;///< 点云的坐标系
   optional bool is_dense = 3;
-  repeated PointXYZIT point = 4;
+  repeated PointXYZIT point = 4;///< 点云的各个激光点
   optional double measurement_time = 5;
   optional uint32 width = 6;
   optional uint32 height = 7;
