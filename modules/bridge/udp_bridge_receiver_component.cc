@@ -193,13 +193,13 @@ bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {
         << " \nproto total frames: " << header.GetTotalFrames()
         << " \nproto frame index: " << header.GetIndex()
         << " \nstatus: " << proto_buf->IsReadyDiserialize()
-        << "--------------------------------------------------";
+        << "\n--------------------------------------------------";
 
   if (proto_buf->IsReadyDiserialize()) {
     auto pb_msg = std::make_shared<T>();
     proto_buf->Diserialized(pb_msg);
     writer_->Write(pb_msg);
-    AWARN << "published!";
+    AWARN << "\npublished!";
     RemoveInvalidBuf(proto_buf->GetMsgID());
     RemoveItem(&proto_list_, proto_buf);
   }

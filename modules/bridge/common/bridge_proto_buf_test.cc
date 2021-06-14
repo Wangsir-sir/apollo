@@ -25,6 +25,29 @@
 namespace apollo {
 namespace bridge {
 
+std::vector<BridgeProtoDiserializedBuf<planning::ADCTrajectory>*> proto_list_;
+
+
+BridgeProtoDiserializedBuf<planning::ADCTrajectory>
+    *CreateBridgeProtoBuf(
+        const BridgeHeader &header) {
+
+  for (auto proto : proto_list_) {
+    if (proto->IsTheProto(header)) {
+      return proto;
+    }
+  }
+  BridgeProtoDiserializedBuf<planning::ADCTrajectory> *proto_buf = new BridgeProtoDiserializedBuf<planning::ADCTrajectory>;
+  if (!proto_buf) {
+    return nullptr;
+  }
+  proto_buf->Initialize(header);
+  proto_list_.push_back(proto_buf);
+  return proto_buf;
+}
+
+
+
 TEST(BridgeProtoBufTest, Simple) {
   cyber::Init("bridge_proto_buf_test");
   BridgeProtoSerializedBuf<planning::ADCTrajectory> proto_buf;
@@ -41,7 +64,7 @@ TEST(BridgeProtoBufTest, Simple) {
   adc_trajectory->mutable_header()->set_sequence_num(123);
   proto_buf.Serialize(adc_trajectory, "planning::ADCTrajectory");
 
-  BridgeProtoDiserializedBuf<planning::ADCTrajectory> proto_recv_buf;
+  
 
   size_t frame_count = proto_buf.GetSerializedBufCount();
   for (size_t i = 0; i < frame_count; i++) {
@@ -65,19 +88,21 @@ TEST(BridgeProtoBufTest, Simple) {
     EXPECT_STREQ(header.GetMsgName().c_str(), "planning::ADCTrajectory");
     EXPECT_EQ(header.GetMsgID(), 123);
 
-    proto_recv_buf.Initialize(header);
-    char *buf = proto_recv_buf.GetBuf(header.GetFramePos());
+    BridgeProtoDiserializedBuf<planning::ADCTrajectory> *proto_recv_buf = CreateBridgeProtoBuf(header);
+    EXPECT_EQ(proto_list_.size(), 1);
+    char *buf = proto_recv_buf->GetBuf(header.GetFramePos());
     cursor = proto_buf.GetSerializedBuf(i) + header_size;
     memcpy(buf, cursor, header.GetFrameSize());
-    proto_recv_buf.UpdateStatus(header.GetIndex());
+    proto_recv_buf->UpdateStatus(header.GetIndex());
     if (i < frame_count - 1) {
-      EXPECT_FALSE(proto_recv_buf.IsReadyDiserialize());
+      EXPECT_FALSE(proto_recv_buf->IsReadyDiserialize());
     } else {
-      EXPECT_TRUE(proto_recv_buf.IsReadyDiserialize());
+      EXPECT_TRUE(proto_recv_buf->IsReadyDiserialize());
     }
   }
+  auto proto_recv_buf = proto_list_.back();
   auto pb_msg = std::make_shared<planning::ADCTrajectory>();
-  proto_recv_buf.Diserialized(pb_msg);
+  proto_recv_buf->Diserialized(pb_msg);
   EXPECT_EQ(pb_msg->header().sequence_num(),
             adc_trajectory->header().sequence_num());
   EXPECT_EQ(pb_msg->trajectory_point_size(),
@@ -91,6 +116,7 @@ TEST(BridgeProtoBufTest, Simple) {
     EXPECT_EQ(adc_trajectory->trajectory_point(i).path_point().y(),
               pb_msg->trajectory_point(i).path_point().x());
   }
+  delete proto_recv_buf;
 }
 
 }  // namespace bridge
