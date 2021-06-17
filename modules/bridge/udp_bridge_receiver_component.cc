@@ -63,7 +63,7 @@ bool UDPBridgeReceiverComponent<T>::Init() {
 
 template <typename T>
 bool UDPBridgeReceiverComponent<T>::InitSession(uint16_t port) {
-  return listener_->Initialize(this, &UDPBridgeReceiverComponent<T>::MsgHandle,
+  return listener_->Initialize(this, &UDPBridgeReceiverComponent<T>::MsgHandleTest,
                                port);
 }
 
@@ -133,6 +133,30 @@ bool UDPBridgeReceiverComponent<T>::IsTimeout(double time_stamp) {
   }
   return false;
 }
+
+
+template <typename T>
+bool UDPBridgeReceiverComponent<T>::MsgHandleTest(int fd){
+  struct sockaddr_in client_addr;
+  socklen_t sock_len = static_cast<socklen_t>(sizeof(client_addr));
+  int bytes = 0;
+  double buf[1024] = {0};
+  if((bytes = static_cast<int>(recvfrom(fd, buf, sizeof(buf),
+                                         0, (struct sockaddr*)&client_addr, &sock_len))) == -1){
+    return false;
+  }
+  buf[bytes] = '\0';
+  AWARN << "server receive" << bytes
+        << "bytes: " << static_cast<double> (buf[0]) << ","
+        <<  static_cast<double> (buf[1]) << "," 
+        <<  static_cast<double> (buf[2]);
+
+  // printf("server receive %d bytes: %f,%f,%f\n",
+  //            bytes, buf[0],buf[1],buf[2]);
+  return true;
+  
+}
+
 
 template <typename T>
 bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {

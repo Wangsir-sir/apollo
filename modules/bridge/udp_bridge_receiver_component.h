@@ -55,6 +55,7 @@ class UDPBridgeReceiverComponent final : public cyber::Component<> {
 
   std::string Name() const { return FLAGS_bridge_module_name; }
   bool MsgHandle(int fd);
+  bool MsgHandleTest(int fd);
 
  private:
   bool InitSession(uint16_t port);
