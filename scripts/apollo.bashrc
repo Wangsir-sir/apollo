@@ -259,9 +259,11 @@ function read_one_char_from_stdin() {
   echo "${answer}" | tr '[:upper:]' '[:lower:]'
 }
 
+# 检查参数后边是否有选项
 function optarg_check_for_opt() {
   local opt="$1"
   local optarg="$2"
+  # =~代表正则表达式判断，^-.*表示以-开头的字符串
   if [[ -z "${optarg}" || "${optarg}" =~ ^-.* ]]; then
       error "Missing parameter for ${opt}. Exiting..."
       exit 3

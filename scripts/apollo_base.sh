@@ -66,6 +66,7 @@ function setup_device_for_aarch64() {
 function setup_device_for_amd64() {
   # setup CAN device
   local NUM_PORTS=8
+  # seq相当于Python当中的range()
   for i in $(seq 0 $((${NUM_PORTS} - 1))); do
     if [[ -e /dev/can${i} ]]; then
       continue

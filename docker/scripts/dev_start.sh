@@ -20,25 +20,26 @@ source "${CURR_DIR}/docker_base.sh"
 
 CACHE_ROOT_DIR="${APOLLO_ROOT_DIR}/.cache"
 
-DOCKER_REPO="apolloauto/apollo"
+DOCKER_REPO="apolloauto/apollo" # 镜像的仓库名称
 DEV_CONTAINER="apollo_dev_${USER}"
 DEV_INSIDE="in-dev-docker"
 
 SUPPORTED_ARCHS=(x86_64 aarch64)
 TARGET_ARCH="$(uname -m)"
 
+# X86_64架构下默认启动的镜像名称
 VERSION_X86_64="dev-x86_64-18.04-20210517_1712"
 TESTING_VERSION_X86_64="dev-x86_64-18.04-testing-20210112_0008"
 
 VERSION_AARCH64="dev-aarch64-18.04-20201218_0030"
-USER_VERSION_OPT=
+USER_VERSION_OPT= # 手动指定启动的镜像版本
 
 FAST_MODE="no"
 
-GEOLOC=
+GEOLOC= # 镜像仓库网站
 
 USE_LOCAL_IMAGE=0
-CUSTOM_DIST=
+CUSTOM_DIST= # 启动镜像的发行版本(stable/testing)
 USER_AGREED="no"
 
 VOLUME_VERSION="latest"
@@ -75,9 +76,10 @@ OPTIONS:
 EOF
 }
 
+# 解析参数，并根据参数执行相应的语句
 function parse_arguments() {
-    local custom_version=""
-    local custom_dist=""
+    local custom_version="" # 启动镜像的版本
+    local custom_dist="" #启动镜像的发行版本(stable/testing)
     local shm_size=""
     local geo=""
 
@@ -86,6 +88,7 @@ function parse_arguments() {
         shift
         case "${opt}" in
             -t | --tag)
+                # -n字符串长度不为0为真
                 if [ -n "${custom_version}" ]; then
                     warning "Multiple option ${opt} specified, only the last one will take effect."
                 fi
@@ -145,12 +148,14 @@ function parse_arguments() {
         esac
     done # End while loop
 
+    # 如果字符串不为空就会执行后面的语句
     [[ -n "${geo}" ]] && GEOLOC="${geo}"
     [[ -n "${custom_version}" ]] && USER_VERSION_OPT="${custom_version}"
     [[ -n "${custom_dist}" ]] && CUSTOM_DIST="${custom_dist}"
     [[ -n "${shm_size}" ]] && SHM_SIZE="${shm_size}"
 }
 
+# 确定运行的镜像DEV_IMAGE
 function determine_dev_image() {
     local version="$1"
     # If no custom version specified
@@ -171,6 +176,7 @@ function determine_dev_image() {
     DEV_IMAGE="${DOCKER_REPO}:${version}"
 }
 
+# 检查主机系统是否为Linux
 function check_host_environment() {
     if [[ "${HOST_OS}" != "Linux" ]]; then
         warning "Running Apollo dev container on ${HOST_OS} is UNTESTED, exiting..."
@@ -178,8 +184,10 @@ function check_host_environment() {
     fi
 }
 
+# 检查主机的架构
 function check_target_arch() {
     local arch="${TARGET_ARCH}"
+    # @代表数组当中所有的元素
     for ent in "${SUPPORTED_ARCHS[@]}"; do
         if [[ "${ent}" == "${TARGET_ARCH}" ]]; then
             return 0
@@ -192,6 +200,7 @@ function check_target_arch() {
 function setup_devices_and_mount_local_volumes() {
     local __retval="$1"
 
+    # 若.cache文件夹不存在则创建一个
     [ -d "${CACHE_ROOT_DIR}" ] || mkdir -p "${CACHE_ROOT_DIR}"
 
     source "${APOLLO_ROOT_DIR}/scripts/apollo_base.sh"
@@ -227,19 +236,24 @@ function setup_devices_and_mount_local_volumes() {
     eval "${__retval}='${volumes}'"
 }
 
+# 根据镜像名拉取镜像，或使用本地镜像
 function docker_pull() {
     local img="$1"
     if [[ "${USE_LOCAL_IMAGE}" -gt 0 ]]; then
+        # 若本地有要指定拉取的镜像，则返回。 
+        # --format会以指定格式输出镜像信息。grep -q没有匹配信息返回0
         if docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "${img}"; then
             info "Local image ${img} found and will be used."
             return
         fi
         warning "Image ${img} not found locally although local mode enabled. Trying to pull from remote registry."
     fi
+    # 根据指定的仓库网址对镜像名进行修改
     if [[ -n "${GEO_REGISTRY}" ]]; then
         img="${GEO_REGISTRY}/${img}"
     fi
 
+    # 拉取镜像
     info "Start pulling docker image ${img} ..."
     if ! docker pull "${img}"; then
         error "Failed to pull docker image : ${img}"

@@ -24,6 +24,7 @@ export HOST_ARCH="$(uname -m)"
 export HOST_OS="$(uname -s)"
 
 GEO_REGISTRY=
+# 确定镜像仓库网站GEO_REGISTRY
 function geo_specific_config() {
     local geo="$1"
     if [[ -z "${geo}" ]]; then
@@ -82,6 +83,7 @@ function determine_gpu_use_host() {
     fi
 }
 
+# 若指定的容器存在则删除容器
 function remove_container_if_exists() {
     local container="$1"
     if docker ps -a --format '{{.Names}}' | grep -q "${container}"; then
@@ -127,6 +129,7 @@ function check_agreement() {
     if [[ -e "${agreement_record}" ]]; then
         return 0
     fi
+    # 将AGREEMENT.txt文件打印至标准输出并获得用户答案
     local agreement_file
     agreement_file="${APOLLO_ROOT_DIR}/scripts/AGREEMENT.txt"
     if [[ ! -f "${agreement_file}" ]]; then
@@ -138,6 +141,7 @@ function check_agreement() {
     local tip="Type 'y' or 'Y' to agree to the license agreement above, \
 or type any other key to exit:"
 
+    # echo -n 不换行输出
     echo -n "${tip}"
     local answer="$(read_one_char_from_stdin)"
     echo
@@ -151,6 +155,7 @@ or type any other key to exit:"
     echo "${user_agreed}" >> "${agreement_record}"
 }
 
+# export声明环境变量，-f代表为函数
 export -f geo_specific_config
 export -f determine_gpu_use_host
 export -f stop_all_apollo_containers remove_container_if_exists
