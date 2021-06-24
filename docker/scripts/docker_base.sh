@@ -93,6 +93,7 @@ function remove_container_if_exists() {
     fi
 }
 
+# 在容器内以root用户运行/apollo/scripts/docker_start_user.sh脚本
 function postrun_start_user() {
     local container="$1"
     if [ "${USER}" != "root" ]; then

@@ -63,6 +63,7 @@ function setup_device_for_aarch64() {
   fi
 }
 
+# 检查设备是否存在
 function setup_device_for_amd64() {
   # setup CAN device
   local NUM_PORTS=8
@@ -97,6 +98,7 @@ function setup_device_for_amd64() {
   fi
 }
 
+# 根据不同的架构进行检查设备
 function setup_device() {
   if [ "$(uname -s)" != "Linux" ]; then
     info "Not on Linux, skip mapping devices."

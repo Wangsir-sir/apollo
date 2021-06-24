@@ -15,6 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ###############################################################################
+
+# 此脚本的功能：检查主机环境，拉取所需的镜像，运行镜像将其中的数据保存至数据卷当中
+# 运行镜像，容器后台运行
+
 CURR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 source "${CURR_DIR}/docker_base.sh"
 
@@ -48,6 +52,7 @@ USER_SPECIFIED_MAPS=
 MAP_VOLUMES_CONF=
 OTHER_VOLUMES_CONF=
 
+# 默认要拉取的地图容器名
 DEFAULT_MAPS=(
     sunnyvale_big_loop
     sunnyvale_loop
@@ -55,6 +60,7 @@ DEFAULT_MAPS=(
     san_mateo
 )
 
+# Fast mode下要拉取的地图容器名
 DEFAULT_TEST_MAPS=(
     sunnyvale_big_loop
     sunnyvale_loop
@@ -155,7 +161,7 @@ function parse_arguments() {
     [[ -n "${shm_size}" ]] && SHM_SIZE="${shm_size}"
 }
 
-# 确定运行的镜像DEV_IMAGE
+# 根据版本确定运行的镜像DEV_IMAGE
 function determine_dev_image() {
     local version="$1"
     # If no custom version specified
@@ -197,6 +203,7 @@ function check_target_arch() {
     exit 1
 }
 
+# 检查设备是否存在并且建立数据卷的参数
 function setup_devices_and_mount_local_volumes() {
     local __retval="$1"
 
@@ -233,10 +240,15 @@ function setup_devices_and_mount_local_volumes() {
                         -v /usr/src:/usr/src \
                         -v /lib/modules:/lib/modules"
     volumes="$(tr -s " " <<<"${volumes}")"
+    # Apollo当中所有的指定数据卷
+    # volumes= -v /home/wcx/apollo:/apollo -v /dev:/dev -v /media:/media -v /tmp/.X11-unix:/tmp/.X11-unix:rw
+    #          -v /etc/localtime:/etc/localtime:ro -v /usr/src:/usr/src -v /lib/modules:/lib/modules
+
+
     eval "${__retval}='${volumes}'"
 }
 
-# 根据镜像名拉取镜像，或使用本地镜像
+# 根据镜像名拉取镜像
 function docker_pull() {
     local img="$1"
     if [[ "${USE_LOCAL_IMAGE}" -gt 0 ]]; then
@@ -261,21 +273,25 @@ function docker_pull() {
     fi
 }
 
+# 拉取镜像，运行容器并挂载
+# 由于容器没有前台进程，运行后会退出并停止，只是将其中的地图文件保存到数据卷当中
 function docker_restart_volume() {
-    local volume="$1"
-    local image="$2"
-    local path="$3"
+    local volume="$1" # 数据卷的名字
+    local image="$2" # 镜像名
+    local path="$3" #挂载在容器当中的路径
     info "Create volume ${volume} from image: ${image}"
     docker_pull "${image}"
     docker volume rm "${volume}" >/dev/null 2>&1
+    # 将数据卷volume挂载到容器当中的指定路径path，并运行容器
     docker run -v "${volume}":"${path}" --rm "${image}" true
 }
 
+# 根据数据卷的名字和数据卷容器的版本，拉取镜像并运行容器，挂载数据卷到容器的指定路径
 function restart_map_volume_if_needed() {
-    local map_name="$1"
-    local map_version="$2"
-    local map_volume="apollo_map_volume-${map_name}_${USER}"
-    local map_path="/apollo/modules/map/data/${map_name}"
+    local map_name="$1" # 指定数据卷的名字
+    local map_version="$2" # 指定数据卷容器的版本
+    local map_volume="apollo_map_volume-${map_name}_${USER}" # 数据卷的名字
+    local map_path="/apollo/modules/map/data/${map_name}" # 挂载在容器当中的路径
 
     if [[ ${MAP_VOLUMES_CONF} == *"${map_volume}"* ]]; then
         info "Map ${map_name} has already been included."
@@ -293,6 +309,9 @@ function restart_map_volume_if_needed() {
     fi
 }
 
+# 拉取并运行所有的map容器，并将其中的地图文件保存到数据卷当中
+# 每个map容器当中，/apollo/modules/map/data/${map_name}/文件夹下保存了该地图的文件，
+# 并建立数据卷，挂载到该容器的此目录，因此每个map容器的地图会保存到数据卷当中
 function mount_map_volumes() {
     info "Starting mounting map volumes ..."
     if [ -n "${USER_SPECIFIED_MAPS}" ]; then
@@ -312,6 +331,7 @@ function mount_map_volumes() {
     fi
 }
 
+# 拉取并运行所有的需要的容器，并将其中的文件保存至数据卷当中
 function mount_other_volumes() {
     info "Mount other volumes ..."
     local volume_conf=
@@ -350,38 +370,51 @@ function mount_other_volumes() {
 }
 
 function main() {
+    # 检查主机系统是否为Linux
     check_host_environment
+    # 检查主机的架构
     check_target_arch
 
+    # 根据输入不同的参数，进行相应的设置
     parse_arguments "$@"
 
+    # 检查用户协议
     if [[ "${USER_AGREED}" != "yes" ]]; then
         check_agreement
     fi
 
+    # 根据版本确定运行的镜像DEV_IMAGE
     determine_dev_image "${USER_VERSION_OPT}"
+    # 确定镜像仓库网站GEO_REGISTRY
     geo_specific_config "${GEOLOC}"
 
+    # 拉取镜像，并可选择使用以及拉取的本地镜像
     if [[ "${USE_LOCAL_IMAGE}" -gt 0 ]]; then
         info "Start docker container based on local image : ${DEV_IMAGE}"
     fi
 
+    # 根据镜像名拉取DEV_IMAGE镜像
     if ! docker_pull "${DEV_IMAGE}"; then
         error "Failed to pull docker image ${DEV_IMAGE}"
         exit 1
     fi
 
+    # 若DEV_CONTAINER容器存在则删除容器并返回
     info "Remove existing Apollo Development container ..."
     remove_container_if_exists ${DEV_CONTAINER}
 
+    # 检查主机GPU使用可用
     info "Determine whether host GPU is available ..."
     determine_gpu_use_host
     info "USE_GPU_HOST: ${USE_GPU_HOST}"
 
+    # 检查设备是否存在并且建立数据卷的参数local_volumes
     local local_volumes=
     setup_devices_and_mount_local_volumes local_volumes
 
+    # 拉取并运行所有的map容器，并将其中的地图文件保存到数据卷当中
     mount_map_volumes
+    # 拉取并运行所有的需要的容器，并将其中的文件保存至数据卷当中
     mount_other_volumes
 
     info "Starting Docker container \"${DEV_CONTAINER}\" ..."
@@ -393,11 +426,16 @@ function main() {
     local group="$(id -g -n)"
     local gid="$(id -g)"
 
+    # -x    执行指令后，会先显示该指令及所有的参数
     set -x
 
+    # 启动DEV_CONTAINER容器
+    # -itd会使容器一直保持后台运行，除非stop容器
     ${DOCKER_RUN_CMD} -itd \
-        --privileged \
+        #--privileged使容器中的用户拥有真正的root权限
+        --privileged \ 
         --name "${DEV_CONTAINER}" \
+        # 设置容器中的环境变量
         -e DISPLAY="${display}" \
         -e DOCKER_USER="${user}" \
         -e USER="${user}" \
@@ -408,13 +446,21 @@ function main() {
         -e USE_GPU_HOST="${USE_GPU_HOST}" \
         -e NVIDIA_VISIBLE_DEVICES=all \
         -e NVIDIA_DRIVER_CAPABILITIES=compute,video,graphics,utility \
+        # 将保存了数据的数据卷挂载到容器的相应位置
+        # 将map容器的数据卷挂载到DEV_CONTAINER容器当中
         ${MAP_VOLUMES_CONF} \
+        # 将其他容器的数据卷挂载到DEV_CONTAINER容器当中
         ${OTHER_VOLUMES_CONF} \
+        # 其他数据卷挂载
         ${local_volumes} \
+        # –net=host 共享主机网络空间，可以像普通进程一样进行网络通信
         --net host \
+        # 设置工作空间
         -w /apollo \
+        # --add-host相当于在/ect/hosts添加解析的IP地址
         --add-host "${DEV_INSIDE}:127.0.0.1" \
         --add-host "${local_host}:127.0.0.1" \
+        # 设置容器当中的主机名
         --hostname "${DEV_INSIDE}" \
         --shm-size "${SHM_SIZE}" \
         --pid=host \
@@ -422,10 +468,12 @@ function main() {
         "${DEV_IMAGE}" \
         /bin/bash
 
+    # $? 表示上个命令的退出的状态
     if [ $? -ne 0 ]; then
         error "Failed to start docker container \"${DEV_CONTAINER}\" based on image: ${DEV_IMAGE}"
         exit 1
     fi
+    
     set +x
 
     postrun_start_user "${DEV_CONTAINER}"
