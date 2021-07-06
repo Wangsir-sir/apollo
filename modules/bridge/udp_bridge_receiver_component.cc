@@ -131,6 +131,44 @@ bool UDPBridgeReceiverComponent<T>::IsTimeout(double time_stamp) {
   return false;
 }
 
+template<typename T>
+bool UDPBridgeReceiverComponent<T>::PrescanMsgHandle(int fd){
+  struct sockaddr_in client_addr;
+  socklen_t sock_len = static_cast<socklen_t>(sizeof(client_addr));
+  int bytes = 0;
+  int total_recv = 4;
+  char total_buf[4] = {0};
+  bytes =
+      static_cast<int>(recvfrom(fd, total_buf, total_recv, 0,
+                                (struct sockaddr *)&client_addr, &sock_len));
+  ADEBUG << "total recv " << bytes;
+  if (bytes <= 0 || bytes > total_recv) {
+    return false;
+  }
+  double timeStamp = total_buf[3];
+  auto protoPtr = protoManager_.CreateObj(timeStamp);
+
+  std::unique_lock<std::mutex> lock(mutex_);
+  protoPtr->point[num].x = total_buf[0];
+  protoPtr->point[num].y = total_buf[1];
+  protoPtr->point[num].z = total_buf[2];
+  protoPtr->header.lidar_timestamp = timeStamp;
+  lock.unlock();
+
+  num++;
+  int64_t now = cyber::Time::Now().ToMicrosecond();
+  lock.lock();
+  if(num == 5120 || now - protoManager_.getTimeStamp() >50){
+    writer_->Write(protoPtr);
+    num = 0
+    now = cyber::Time::Now().ToMicrosecond();
+    if(!protoManager_.DestructObj(timeStamp)){
+      ADEBUG << "DestructObj failed!";
+    }
+  }
+
+}
+
 template <typename T>
 bool UDPBridgeReceiverComponent<T>::MsgHandle(int fd) {
   struct sockaddr_in client_addr;
