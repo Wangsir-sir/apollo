@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
+/**
+ * @file 该文件中函数的实现均在相应的动态链接库当中
+ */
 
 #pragma once
 

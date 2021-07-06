@@ -5,12 +5,15 @@
 # 3. To override the flag values, you must set it after this file, as all Flags
 #    are evaluated strictly in order.
 
+# 车辆的配置文件路径
 --vehicle_config_path=/apollo/modules/common/data/vehicle_param.pb.txt
 
+# 日志输出文件夹
 --log_dir=/apollo/data/log
 
 --use_navigation_mode=false
 
+# 默认的地图文件夹
 --map_dir=/apollo/modules/map/data/sunnyvale_loop
 
 --use_sim_time=false

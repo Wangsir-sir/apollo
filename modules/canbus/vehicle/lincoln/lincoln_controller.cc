@@ -42,11 +42,21 @@ using control::ControlCommand;
 namespace {
 
 const int32_t kMaxFailAttempt = 10;
-const int32_t CHECK_RESPONSE_STEER_UNIT_FLAG = 1;
-const int32_t CHECK_RESPONSE_SPEED_UNIT_FLAG = 2;
+const int32_t CHECK_RESPONSE_STEER_UNIT_FLAG = 1; ///< 检查底盘转向单元的标志
+const int32_t CHECK_RESPONSE_SPEED_UNIT_FLAG = 2; ///< 检查底盘速度单元的标志
 
 }  // namespace
 
+/**
+ * @brief 初始化车辆控制器
+ * @details 获取车辆参数，以及指向can_sender和message_manager的指针，
+ *          通过前者的方法获得指向该车型的发送can协议类对象的指针，并且在CanSender的容器当中创建相应协议的can报文
+ * 
+ * @param params 车辆参数
+ * @param can_sender 发送can帧类
+ * @param message_manager 协议管理类
+ * @return ErrorCode 设置状态
+ */
 ErrorCode LincolnController::Init(
     const VehicleParameter &params,
     CanSender<::apollo::canbus::ChassisDetail> *const can_sender,
@@ -76,6 +86,7 @@ ErrorCode LincolnController::Init(
   message_manager_ = message_manager;
 
   // Sender part
+  // 通过协议管理类，获取指向各个协议类堆对象的指针
   brake_60_ = dynamic_cast<Brake60 *>(
       message_manager_->GetMutableProtocolDataById(Brake60::ID));
   if (brake_60_ == nullptr) {
@@ -110,6 +121,7 @@ ErrorCode LincolnController::Init(
     return ErrorCode::CANBUS_ERROR;
   }
 
+  // 根据所有发送至can的协议类对象，在can_sender_当中创建相应的can报文
   can_sender_->AddMessage(Brake60::ID, brake_60_, false);
   can_sender_->AddMessage(Throttle62::ID, throttle_62_, false);
   can_sender_->AddMessage(Steering64::ID, steering_64_, false);
@@ -124,6 +136,12 @@ ErrorCode LincolnController::Init(
   return ErrorCode::OK;
 }
 
+/**
+ * @brief 开启安全检测线程
+ * 
+ * @return true 
+ * @return false 
+ */
 bool LincolnController::Start() {
   if (!is_initialized_) {
     AERROR << "LincolnController has NOT been initiated.";
@@ -135,6 +153,10 @@ bool LincolnController::Start() {
   return true;
 }
 
+/**
+ * @brief 阻塞等待线程结束，回收资源
+ * 
+ */
 void LincolnController::Stop() {
   if (!is_initialized_) {
     AERROR << "LincolnController stops or starts improperly!";
@@ -148,11 +170,17 @@ void LincolnController::Stop() {
   }
 }
 
+/**
+ * @brief 清空底盘信息，并根据message_manager_获得的底盘详细信息填充底盘信息，
+ *        并以值传递的方式返回底盘反馈消息
+ * 
+ * @return Chassis 当前时刻的底盘反馈消息
+ */
 Chassis LincolnController::chassis() {
   chassis_.Clear();
 
   ChassisDetail chassis_detail;
-  message_manager_->GetSensorData(&chassis_detail);
+  message_manager_->GetSensorData(&chassis_detail); //对sensor_data_的读操作
 
   // 21, 22, previously 1, 2
   if (driving_mode() == Chassis::EMERGENCY_MODE) {
@@ -160,7 +188,7 @@ Chassis LincolnController::chassis() {
   }
 
   chassis_.set_driving_mode(driving_mode());
-  chassis_.set_error_code(chassis_error_code());
+  chassis_.set_error_code(chassis_error_code()); 
 
   // 3
   chassis_.set_engine_started(true);
@@ -381,24 +409,38 @@ Chassis LincolnController::chassis() {
   return chassis_;
 }
 
+/**
+ * @brief 车辆进入紧急状态
+ * @details 将车辆驾驶模式设为紧急模式，清空所有协议，并设置车辆底盘错误信息
+ * 
+ */
 void LincolnController::Emergency() {
   set_driving_mode(Chassis::EMERGENCY_MODE);
+  // 清空所有协议
   ResetProtocol();
   if (chassis_error_code() == Chassis::NO_ERROR) {
     set_chassis_error_code(Chassis::CHASSIS_ERROR);
   }
 }
 
+/**
+ * @brief 进入自动驾驶模式
+ * 
+ * @return ErrorCode 状态，若开启失败则会进入紧急模式
+ */
 ErrorCode LincolnController::EnableAutoMode() {
   if (driving_mode() == Chassis::COMPLETE_AUTO_DRIVE) {
     AINFO << "Already in COMPLETE_AUTO_DRIVE mode";
     return ErrorCode::OK;
   }
+  // 在刹车油门转向can协议当中分别设置自动控制
   brake_60_->set_enable();
   throttle_62_->set_enable();
   steering_64_->set_enable();
 
+  // 更新发送can类当中所有can协议报文
   can_sender_->Update();
+  // 检查转向和速度单元是否正常,若相关的底盘模块不正常，会进入紧急模式
   const int32_t flag =
       CHECK_RESPONSE_STEER_UNIT_FLAG | CHECK_RESPONSE_SPEED_UNIT_FLAG;
   if (!CheckResponse(flag, true)) {
@@ -407,11 +449,16 @@ ErrorCode LincolnController::EnableAutoMode() {
     Emergency();
     return ErrorCode::CANBUS_ERROR;
   }
-  set_driving_mode(Chassis::COMPLETE_AUTO_DRIVE);
+  set_driving_mode(Chassis::COMPLETE_AUTO_DRIVE); // 对driving_mode_的写操作
   AINFO << "Switch to COMPLETE_AUTO_DRIVE mode ok.";
   return ErrorCode::OK;
 }
 
+/**
+ * @brief 停止自动驾驶模式，进入手动模式
+ * 
+ * @return ErrorCode 
+ */
 ErrorCode LincolnController::DisableAutoMode() {
   ResetProtocol();
   can_sender_->Update();
@@ -421,6 +468,11 @@ ErrorCode LincolnController::DisableAutoMode() {
   return ErrorCode::OK;
 }
 
+/**
+ * @brief 进入自动转向模式
+ * 
+ * @return ErrorCode 状态，若开启失败则会进入紧急模式
+ */
 ErrorCode LincolnController::EnableSteeringOnlyMode() {
   if (driving_mode() == Chassis::COMPLETE_AUTO_DRIVE ||
       driving_mode() == Chassis::AUTO_STEER_ONLY) {
@@ -428,11 +480,14 @@ ErrorCode LincolnController::EnableSteeringOnlyMode() {
     AINFO << "Already in AUTO_STEER_ONLY mode";
     return ErrorCode::OK;
   }
+  // 只有转向设为自动模式
   brake_60_->set_disable();
   throttle_62_->set_disable();
   steering_64_->set_enable();
 
+  // 更新所有协议的can报文
   can_sender_->Update();
+  // 若转向模块不正常，会进入紧急模式
   if (!CheckResponse(CHECK_RESPONSE_STEER_UNIT_FLAG, true)) {
     AERROR << "Failed to switch to AUTO_STEER_ONLY mode.";
     CheckChassisError();
@@ -444,6 +499,11 @@ ErrorCode LincolnController::EnableSteeringOnlyMode() {
   return ErrorCode::OK;
 }
 
+/**
+ * @brief 进入自动速度模式
+ * 
+ * @return ErrorCode 状态，若开启失败则会进入紧急模式
+ */
 ErrorCode LincolnController::EnableSpeedOnlyMode() {
   if (driving_mode() == Chassis::COMPLETE_AUTO_DRIVE ||
       driving_mode() == Chassis::AUTO_SPEED_ONLY) {
@@ -451,11 +511,14 @@ ErrorCode LincolnController::EnableSpeedOnlyMode() {
     AINFO << "Already in AUTO_SPEED_ONLY mode";
     return ErrorCode::OK;
   }
+  // 将刹车和油门设置为自动控制
   brake_60_->set_enable();
   throttle_62_->set_enable();
   steering_64_->set_disable();
 
+  // 更新所有协议的can报文
   can_sender_->Update();
+  // 若速度模块不正常，会进入紧急模式
   if (!CheckResponse(CHECK_RESPONSE_SPEED_UNIT_FLAG, true)) {
     AERROR << "Failed to switch to AUTO_SPEED_ONLY mode.";
     CheckChassisError();
@@ -468,6 +531,13 @@ ErrorCode LincolnController::EnableSpeedOnlyMode() {
 }
 
 // NEUTRAL, REVERSE, DRIVE
+/**
+ * @brief 通过修改档位协议类的数据成员，设置当前车辆的档位
+ * @details 速度自动控制时不需要设置档位
+ *          只有当车辆当前为空挡时才可以设置档位，若车辆当前档位不是空挡，则会将车辆的档位设置为空挡
+ * 
+ * @param ref_gear_position 目标档位
+ */
 void LincolnController::Gear(Chassis::GearPosition ref_gear_position) {
   if (driving_mode() != Chassis::COMPLETE_AUTO_DRIVE &&
       driving_mode() != Chassis::AUTO_SPEED_ONLY) {
@@ -475,8 +545,10 @@ void LincolnController::Gear(Chassis::GearPosition ref_gear_position) {
     return;
   }
 
+  // 若目标档位与当前档位一致，则不需要设置
   ChassisDetail chassis_detail;
-  message_manager_->GetSensorData(&chassis_detail);
+  // 获得当前通过can接收的消息
+  message_manager_->GetSensorData(&chassis_detail); //对sensor_data_的读操作
   const Chassis::GearPosition current_gear_position =
       chassis_detail.gear().gear_state();
   if (ref_gear_position == current_gear_position) {
@@ -535,6 +607,12 @@ void LincolnController::Gear(Chassis::GearPosition ref_gear_position) {
 // acceleration:0.0 ~ 7.0, unit:m/s^2
 // acceleration_spd:60 ~ 100, suggest: 90
 // -> pedal
+/**
+ * @brief 设置刹车开度，单位：百分比
+ * @details 速度自动控制时不需要设置
+ * 
+ * @param pedal 
+ */
 void LincolnController::Brake(double pedal) {
   if (driving_mode() != Chassis::COMPLETE_AUTO_DRIVE &&
       driving_mode() != Chassis::AUTO_SPEED_ONLY) {
@@ -546,6 +624,12 @@ void LincolnController::Brake(double pedal) {
 
 // drive with old acceleration
 // gas:0.00~99.99 unit:%
+/**
+ * @brief 设置油门开度
+ * @details 速度自动控制时不需要设置
+ * 
+ * @param pedal 
+ */
 void LincolnController::Throttle(double pedal) {
   if (driving_mode() != Chassis::COMPLETE_AUTO_DRIVE &&
       driving_mode() != Chassis::AUTO_SPEED_ONLY) {
@@ -557,6 +641,11 @@ void LincolnController::Throttle(double pedal) {
 
 // drive with acceleration/deceleration
 // acc:-7.0 ~ 5.0, unit:m/s^2
+/**
+ * @brief 设置加速度（该函数没有实现）
+ * 
+ * @param acc 
+ */
 void LincolnController::Acceleration(double acc) {
   if (driving_mode() != Chassis::COMPLETE_AUTO_DRIVE &&
       driving_mode() != Chassis::AUTO_SPEED_ONLY) {
@@ -570,12 +659,18 @@ void LincolnController::Acceleration(double acc) {
 // need to be compatible with control module, so reverse
 // steering with old angle speed
 // angle:-99.99~0.00~99.99, unit:%, left:-, right:+
+/**
+ * @brief 设置前轮转角
+ * 
+ * @param angle 最大转角的百分比下的目标前轮转角
+ */
 void LincolnController::Steer(double angle) {
   if (driving_mode() != Chassis::COMPLETE_AUTO_DRIVE &&
       driving_mode() != Chassis::AUTO_STEER_ONLY) {
     AINFO << "The current driving mode does not need to set steer.";
     return;
   }
+  // 弧度制下的目标转角
   const double real_angle =
       vehicle_params_.max_steer_angle() / M_PI * 180 * angle / 100.0;
   // reverse sign
@@ -585,6 +680,12 @@ void LincolnController::Steer(double angle) {
 // steering with new angle speed
 // angle:-99.99~0.00~99.99, unit:%, left:-, right:+
 // angle_spd:0.00~99.99, unit:deg/s
+/**
+ * @brief 设置前轮转角以及转向速度
+ * 
+ * @param angle 最大转角的百分比下的目标前轮转角
+ * @param angle_spd 最大转向角速度的百分比
+ */
 void LincolnController::Steer(double angle, double angle_spd) {
   if (driving_mode() != Chassis::COMPLETE_AUTO_DRIVE &&
       driving_mode() != Chassis::AUTO_STEER_ONLY) {
@@ -603,6 +704,11 @@ void LincolnController::Steer(double angle, double angle_spd) {
       ->set_steering_angle_speed(real_angle_spd);
 }
 
+/**
+ * @brief 设置电子驻车（没有实现）
+ * 
+ * @param command 控制消息
+ */
 void LincolnController::SetEpbBreak(const ControlCommand &command) {
   if (command.parking_brake()) {
     // None
@@ -611,6 +717,11 @@ void LincolnController::SetEpbBreak(const ControlCommand &command) {
   }
 }
 
+/**
+ * @brief 设置车辆灯光（没有实现）
+ * 
+ * @param command 控制消息
+ */
 void LincolnController::SetBeam(const ControlCommand &command) {
   if (command.signal().high_beam()) {
     // None
@@ -621,6 +732,11 @@ void LincolnController::SetBeam(const ControlCommand &command) {
   }
 }
 
+/**
+ * @brief 设置车辆喇叭（没有实现）
+ * 
+ * @param command 控制消息
+ */
 void LincolnController::SetHorn(const ControlCommand &command) {
   if (command.signal().horn()) {
     // None
@@ -629,6 +745,11 @@ void LincolnController::SetHorn(const ControlCommand &command) {
   }
 }
 
+/**
+ * @brief 设置车辆转向灯
+ * 
+ * @param command 控制消息
+ */
 void LincolnController::SetTurningSignal(const ControlCommand &command) {
   // Set Turn Signal
   auto signal = command.signal().turn_signal();
@@ -641,13 +762,17 @@ void LincolnController::SetTurningSignal(const ControlCommand &command) {
   }
 }
 
+/**
+ * @brief 清空message_manager_当中保存的所有协议
+ * 
+ */
 void LincolnController::ResetProtocol() {
   message_manager_->ResetSendMessages();
 }
 
 bool LincolnController::CheckChassisError() {
   ChassisDetail chassis_detail;
-  message_manager_->GetSensorData(&chassis_detail);
+  message_manager_->GetSensorData(&chassis_detail); //对sensor_data_的读操作
 
   int32_t error_cnt = 0;
   int32_t chassis_error_mask = 0;
@@ -767,27 +892,39 @@ bool LincolnController::CheckChassisError() {
   return false;
 }
 
+/**
+ * @brief 安全检测线程
+ * @details 当can_sender_开启，执行发送can帧的线程时，
+ *          以一定的频率，根据自动驾驶模式不断检查底盘模块是否正常，若连续出错的次数超出了阈值，则进入紧急模式
+ * 
+ */
 void LincolnController::SecurityDogThreadFunc() {
   if (can_sender_ == nullptr) {
     AERROR << "Failed to run SecurityDogThreadFunc() because can_sender_ is "
               "nullptr.";
     return;
   }
+  // 阻塞等待can_sender_开启，执行发送can帧的线程
+  // 在线程当中循环等待时需要使用td::this_thread::yield节约CPU资源
   while (!can_sender_->IsRunning()) {
+    // yield主动让出时间片
     std::this_thread::yield();
   }
 
-  std::chrono::duration<double, std::micro> default_period{50000};
+  std::chrono::duration<double, std::micro> default_period{50000}; //一次循环的时间
   int64_t start = cyber::Time::Now().ToMicrosecond();
 
   int32_t speed_ctrl_fail = 0;
   int32_t steer_ctrl_fail = 0;
 
+  // 当can_sender_开启，执行发送can帧的线程时
+  // 以一定的频率，根据自动驾驶模式不断检查底盘模块是否正常，若连续出错的次数超出了阈值，则进入紧急模式
   while (can_sender_->IsRunning()) {
-    const Chassis::DrivingMode mode = driving_mode();
+    const Chassis::DrivingMode mode = driving_mode(); // 对driving_mode_的读操作
     bool emergency_mode = false;
 
     // 1. Steer control check
+    // 若转向自动控制下转向模块不正常，若重试此时超过阈值则进入紧急模式并设置底盘错误信息
     if ((mode == Chassis::COMPLETE_AUTO_DRIVE ||
          mode == Chassis::AUTO_STEER_ONLY) &&
         !CheckResponse(CHECK_RESPONSE_STEER_UNIT_FLAG, false)) {
@@ -801,6 +938,7 @@ void LincolnController::SecurityDogThreadFunc() {
     }
 
     // 2. Speed control check
+    // 若速度自动控制下速度模块不正常，若重试此时超过阈值则进入紧急模式并设置底盘错误信息
     if ((mode == Chassis::COMPLETE_AUTO_DRIVE ||
          mode == Chassis::AUTO_SPEED_ONLY) &&
         !CheckResponse(CHECK_RESPONSE_SPEED_UNIT_FLAG, false)) {
@@ -821,18 +959,28 @@ void LincolnController::SecurityDogThreadFunc() {
     }
     int64_t end = cyber::Time::Now().ToMicrosecond();
     std::chrono::duration<double, std::micro> elapsed{end - start};
+    // 控制循环时间为default_period
     if (elapsed < default_period) {
       std::this_thread::sleep_for(default_period - elapsed);
       start = cyber::Time::Now().ToMicrosecond();
     } else {
-      AERROR_EVERY(100)
-          << "Too much time consumption in LincolnController looping process:"
-          << elapsed.count();
-      start = end;
+    AERROR_EVERY(100)
+        << "Too much time consumption in LincolnController looping process:"
+        << elapsed.count();
+    start = end;
     }
   }
 }
 
+/**
+ * @brief 检查底盘功能的转向和速度单元是否正常
+ * @details 通过检查底盘信息，检测eps，vcu，esp是否正常
+ * 
+ * @param flags 检查单元的标志
+ * @param need_wait 
+ * @return true 正常
+ * @return false 不正常
+ */
 bool LincolnController::CheckResponse(const int32_t flags, bool need_wait) {
   // for Lincoln, CheckResponse commonly takes 300ms. We leave a 100ms buffer
   // for it.
@@ -843,6 +991,7 @@ bool LincolnController::CheckResponse(const int32_t flags, bool need_wait) {
   bool is_esp_online = false;
 
   do {
+    //对sensor_data_的读操作
     if (message_manager_->GetSensorData(&chassis_detail) != ErrorCode::OK) {
       AERROR_EVERY(100) << "Get chassis detail failed.";
       return false;
@@ -891,11 +1040,23 @@ int32_t LincolnController::chassis_error_mask() {
   return chassis_error_mask_;
 }
 
+/**
+ * @brief 返回当前的底盘错误信息
+ * @note 对共享变量chassis_error_code_的读操作
+ * 
+ * @return Chassis::ErrorCode 
+ */
 Chassis::ErrorCode LincolnController::chassis_error_code() {
   std::lock_guard<std::mutex> lock(chassis_error_code_mutex_);
   return chassis_error_code_;
 }
 
+/**
+ * @brief 设置底盘的错误信息
+ * @note 对共享变量chassis_error_code_的写操作
+ * 
+ * @param error_code 
+ */
 void LincolnController::set_chassis_error_code(
     const Chassis::ErrorCode &error_code) {
   std::lock_guard<std::mutex> lock(chassis_error_code_mutex_);

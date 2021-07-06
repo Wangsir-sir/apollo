@@ -58,6 +58,7 @@ class HermesCanClient : public CanClient {
 
   /**
    * @brief Start the ESD CAN client.
+   *        从CANCardParameter当中获取port_以及num_ports
    * @return The status of the start action which is defined by
    *         apollo::common::ErrorCode.
    */

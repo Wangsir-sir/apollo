@@ -46,7 +46,7 @@ namespace canbus {
  * @brief The class which defines the information to send and receive.
  */
 struct CanFrame {
-  /// Message id
+  /// Message id 该can报文对应的协议类型
   uint32_t id;
   /// Message length
   uint8_t len;
@@ -88,6 +88,7 @@ const int CAN_ERROR_RECV_FAILED = CAN_ERROR_BASE + 4;
 /**
  * @class CanClient
  * @brief The class which defines the CAN client to send and receive message.
+ * @details 用于开启can设备和接收与发送can帧。其作为一个接口可供不同种类的can子类继承，从而实现继承多态
  */
 class CanClient {
  public:

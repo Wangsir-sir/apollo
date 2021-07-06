@@ -52,6 +52,7 @@ namespace lincoln {
 
 /**
  * @class LincolnController
+ * @details 该类包含向can发送报文的协议类堆对象指针，可以通过VehicleController修改这些协议类的成员变量
  *
  * @brief this class implements the vehicle controller for lincoln vehicle.
  */
@@ -141,25 +142,26 @@ class LincolnController final : public VehicleController {
 
  private:
   // control protocol
+  // 指向该车型发送协议类堆对象的指针
   Brake60 *brake_60_ = nullptr;
   Throttle62 *throttle_62_ = nullptr;
   Steering64 *steering_64_ = nullptr;
   Gear66 *gear_66_ = nullptr;
   Turnsignal68 *turnsignal_68_ = nullptr;
 
-  Chassis chassis_;
+  Chassis chassis_; ///< 底盘反馈消息
   std::unique_ptr<std::thread> thread_;
   bool is_chassis_error_ = false;
 
-  std::mutex chassis_error_code_mutex_;
-  Chassis::ErrorCode chassis_error_code_ = Chassis::NO_ERROR;
+  std::mutex chassis_error_code_mutex_; 
+  Chassis::ErrorCode chassis_error_code_ = Chassis::NO_ERROR; ///< 当前车辆的底盘错误信息
 
   std::mutex chassis_mask_mutex_;
-  int32_t chassis_error_mask_ = 0;
+  int32_t chassis_error_mask_ = 0; ///<共享变量，该变量会在不同的线程当中访问
 
   bool received_vin_ = false;
 
-  canbus::Chassis::GearPosition gear_tmp_;
+  canbus::Chassis::GearPosition gear_tmp_; ///< 车辆当前的档位
 };
 
 }  // namespace lincoln

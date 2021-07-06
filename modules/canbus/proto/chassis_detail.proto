@@ -271,6 +271,7 @@ message Brake {
   optional bool is_brake_valid = 6;
 
   // lincoln brake 61
+  // input,cmd,output之间有什么区别？
   optional double brake_input = 7;
   optional double brake_cmd = 8;
   optional double brake_output = 9;

@@ -70,6 +70,7 @@ ErrorCode SocketCanClientRaw::Start() {
   // if more than one card, when install driver u can specify the minior id
   // int32_t ret = canOpen(net, pCtx->mode, txbufsize, rxbufsize, 0, 0,
   // &dev_handler_);
+  // 使用原始套接字协议创建can套接字
   dev_handler_ = socket(PF_CAN, SOCK_RAW, CAN_RAW);
   if (dev_handler_ < 0) {
     AERROR << "open device error code [" << dev_handler_ << "]: ";

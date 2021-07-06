@@ -121,6 +121,7 @@ apollo::common::ErrorCode HermesCanClient::Send(
   //         << MAX_CAN_SEND_FRAME_LEN << "], frame_num:" << *frame_num;
   //       return ErrorCode::CAN_CLIENT_ERROR_FRAME_NUM;
   //    }
+  // 填充
   for (int i = 0; i < *frame_num; ++i) {
     _send_frames[i].bcan_msg_id = frames[i].id;
     _send_frames[i].bcan_msg_datalen = frames[i].len;

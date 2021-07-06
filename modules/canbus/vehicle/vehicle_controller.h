@@ -49,6 +49,12 @@ using ::apollo::drivers::canbus::MessageManager;
  *
  * @brief This is the interface class of vehicle controller. It defines pure
  * virtual functions, and also some implemented common functions.
+ * @details 所有控制器的基类，该类包含向can发送报文的协议类堆对象指针，可以通过其定义的一系列方法修改发送协议的物理量
+ *          不同的车型继承该类，并在派生类当中定义相关车型的的发送协议指针，
+ *          通过Update方法，根据控制消息参数修改CanSender对应发送协议的物理量
+ *          - 通过MessageManager对象根据不同的协议ID找到该车型相关的发送协议堆对象，初始化指针
+ *            并通过其GetSensorData方法，获得从can接收解析而来的底盘消息，获得当前底盘的信息
+ *          - 通过CanSender，根据相应的协议在当中创建相应的can发送报文，并在修改相关can协议物理量时通过CanSender更新其保存的所有can报文
  */
 class VehicleController {
  public:
@@ -109,41 +115,47 @@ class VehicleController {
   virtual common::ErrorCode EnableSteeringOnlyMode() = 0;
   virtual common::ErrorCode EnableSpeedOnlyMode() = 0;
 
-  /*
+  /**
    * @brief NEUTRAL, REVERSE, DRIVE
+   *        通过修改相关协议类的数据成员，设置车辆的档位
    */
   virtual void Gear(Chassis::GearPosition state) = 0;
 
-  /*
+  /**
    * @brief detail function for auto driving brake with new acceleration
    * acceleration:0.00~99.99, unit:%
+   *        通过修改相关协议类的数据成员，设置刹车开度
    */
   virtual void Brake(double acceleration) = 0;
 
-  /*
+  /**
    * @brief drive with old acceleration gas:0.00~99.99 unit:%
+   *        通过修改相关协议类的数据成员，设置油门开度
    */
   virtual void Throttle(double throttle) = 0;
 
-  /*
+  /**
    * @brief drive with new acceleration/deceleration:-7.0~7.0, unit:m/s^2,
    * acc:-7.0~7.0, unit:m/s^2
+   *        通过修改相关协议类的数据成员，设置加速度
    */
   virtual void Acceleration(double acc) = 0;
 
-  /*
+  /**
    * @brief steering with old angle speed angle:-99.99~0.00~99.99, unit:%,
    * left:+, right:-
+   *        通过修改相关协议类的数据成员，设置前轮转角
    */
   virtual void Steer(double angle) = 0;
 
-  /*
+  /**
    * @brief steering with new angle speed angle:-99.99~0.00~99.99, unit:%,
    * left:+, right:- angle_spd:0.00~99.99, unit:deg/s
+   *        通过修改相关协议类的数据成员，设置前轮转角和转向速度
    */
   virtual void Steer(double angle, double angle_spd) = 0;
 
-  /*
+  /**
    * @brief set Electrical Park Brake
    */
   virtual void SetEpbBreak(const control::ControlCommand &command) = 0;
@@ -151,21 +163,22 @@ class VehicleController {
   virtual void SetHorn(const control::ControlCommand &command) = 0;
   virtual void SetTurningSignal(const control::ControlCommand &command) = 0;
 
-  virtual void SetLimits() {}
+  virtual void SetLimits() {} // 该函数没有实现
 
  protected:
   virtual Chassis::DrivingMode driving_mode();
   virtual void set_driving_mode(const Chassis::DrivingMode &driving_mode);
 
  protected:
-  canbus::VehicleParameter params_;
-  common::VehicleParam vehicle_params_;
-  CanSender<ChassisDetail> *can_sender_ = nullptr;
-  MessageManager<ChassisDetail> *message_manager_ = nullptr;
+  canbus::VehicleParameter params_; ///< 车辆参数
+  common::VehicleParam vehicle_params_; ///< 车辆配置参数
+  CanSender<ChassisDetail> *can_sender_ = nullptr; ///< 发送can数据类，用于当相应的协议类的数据成员发生变化时更新can报文
+  MessageManager<ChassisDetail> *message_manager_ = nullptr; ///< 管理该车型can协议
   bool is_initialized_ = false;  // own by derviative concrete controller
-  Chassis::DrivingMode driving_mode_ = Chassis::COMPLETE_MANUAL;
+  // driving_mode_在主线程中发生了写操作，其他线程中发生了读操作，因此需要互斥量保护
+  Chassis::DrivingMode driving_mode_ = Chassis::COMPLETE_MANUAL; ///< 车辆当前的驾驶模式
   bool is_reset_ = false;  // reset command from control command
-  std::mutex mode_mutex_;  // only use in this base class
+  std::mutex mode_mutex_;  // only use in this base class 保护driving_mode_的互斥量
 };
 
 }  // namespace canbus

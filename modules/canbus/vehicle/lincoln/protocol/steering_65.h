@@ -44,7 +44,7 @@ class Steering65 : public ::apollo::drivers::canbus::ProtocolData<
  public:
   static const int32_t ID;
 
-  /*
+  /**
    * @brief parse received data
    * @param bytes a pointer to the input bytes
    * @param length the length of the input bytes

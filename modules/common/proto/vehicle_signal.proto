@@ -2,7 +2,9 @@ syntax = "proto2";
 
 package apollo.common;
 
+// 车辆灯光以及喇叭信号
 message VehicleSignal {
+  // 转向灯
   enum TurnSignal {
     TURN_NONE = 0;
     TURN_LEFT = 1;
@@ -10,8 +12,8 @@ message VehicleSignal {
   };
   optional TurnSignal turn_signal = 1;
   // lights enable command
-  optional bool high_beam = 2;
-  optional bool low_beam = 3;
-  optional bool horn = 4;
-  optional bool emergency_light = 5;
+  optional bool high_beam = 2; ///< 远光灯
+  optional bool low_beam = 3; ///< 近光灯
+  optional bool horn = 4; ///< 喇叭
+  optional bool emergency_light = 5; ///< 紧急指示灯
 }

@@ -36,6 +36,7 @@ namespace lincoln {
  * @class Brake60
  *
  * @brief one of the protocol data of lincoln vehicle
+ * @details 向底盘发送刹车相关的can报文协议类，保存相关要设置的量以及在can报文设置其的方法
  */
 class Brake60 : public ::apollo::drivers::canbus::ProtocolData<
                     ::apollo::canbus::ChassisDetail> {
@@ -43,13 +44,16 @@ class Brake60 : public ::apollo::drivers::canbus::ProtocolData<
   static const int32_t ID;
   /**
    * @brief get the data period
-   * @return the value of data period
+   * @return the value of data period 10ms
    */
   uint32_t GetPeriod() const override;
 
   /**
-   * @brief update the data
-   * @param data a pointer to the data to be updated
+   * @brief 根据数据成员更新can报文
+   * @param data 传出参数，被更新的can报文的首字节的指针
+   * @details 在0位更新刹车开度，在16位更新boo_cmd_，在24位更新自动控制标志
+   *          在25位更新clear_driver_override_flag_，在26位更新ignore_driver_override_
+   *          在56位更新watchdog_counter_
    */
   void UpdateData(uint8_t *data) override;
 
@@ -90,52 +94,82 @@ class Brake60 : public ::apollo::drivers::canbus::ProtocolData<
   Brake60 *disable_boo_cmd();
 
   /**
-   * config detail: {'name': 'pcmd', 'offset': 0.0, 'precision':
+   * @brief 在can报文相应的字节设置刹车开度的值
+   * @details config detail: 
+   * {'name': 'pcmd', 'offset': 0.0, 'precision':
    * 1.52590218966964e-05, 'len': 16, 'f_type': 'value', 'is_signed_var': False,
    * 'physical_range': '[0|1]', 'bit': 0, 'type': 'double', 'order': 'intel',
    * 'physical_unit': '"%"'}
+   * 
+   * @param data 指向can报文的首字节的指针
+   * @param pedal 刹车开度
    */
   void set_pedal_p(uint8_t *data, double pedal);
 
   /**
-   * config detail: {'name': 'bcmd', 'offset': 0.0, 'precision': 1.0, 'len': 1,
+   * @brief 在can报文相应的字节设置boo_cmd
+   * @details config detail:
+   *  {'name': 'bcmd', 'offset': 0.0, 'precision': 1.0, 'len': 1,
    * 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 16, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
+   * 
+   * @param bytes 指向can报文的首字节的指针
+   * @param boo_cmd 
    */
   void set_boo_cmd_p(uint8_t *bytes, bool boo_cmd);
 
   /**
-   * config detail: {'name': 'en', 'offset': 0.0, 'precision': 1.0, 'len': 1,
+   * @brief 在can报文相应的字节设置自动刹车标志
+   * @details config detail:
+   *  {'name': 'en', 'offset': 0.0, 'precision': 1.0, 'len': 1,
    * 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 24, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
+   * 
+   * @param bytes 指向can报文的首字节的指针
+   * @param en 自动刹车标志
    */
   void set_enable_p(uint8_t *bytes, bool en);
 
   /**
-   * config detail: {'name': 'clear', 'offset': 0.0, 'precision': 1.0, 'len': 1,
+   * @brief 在can报文相应的字节设置
+   * @details config detail:
+   *  {'name': 'clear', 'offset': 0.0, 'precision': 1.0, 'len': 1,
    * 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 25, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
+   * 
+   * @param bytes 指向can报文的首字节的指针
+   * @param clear 
    */
   void set_clear_driver_override_flag_p(uint8_t *bytes, bool clear);
 
   /**
-   * config detail: {'name': 'ignore', 'offset': 0.0, 'precision': 1.0, 'len':
+   * @brief 在can报文相应的字节设置
+   * @details config detail:
+   *  {'name': 'ignore', 'offset': 0.0, 'precision': 1.0, 'len':
    * 1, 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 26, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
+   * 
+   * @param bytes 指向can报文的首字节的指针
+   * @param ignore 
    */
   void set_ignore_driver_override_p(uint8_t *bytes, bool ignore);
 
-  /*
-   * config detail: {'name': 'count', 'offset': 0.0, 'precision': 1.0, 'len': 8,
+  /**
+   * @brief 在can报文相应的字节设置
+   * @details config detail:
+   *  {'name': 'count', 'offset': 0.0, 'precision': 1.0, 'len': 8,
    * 'f_type': 'value', 'is_signed_var': False, 'physical_range': '[0|255]',
    * 'bit': 56, 'type': 'int', 'order': 'intel', 'physical_unit': '""'}
+   * 
+   * @param data 指向can报文的首字节的指针
+   * @param count 
    */
   void set_watchdog_counter_p(uint8_t *data, int32_t count);
 
  private:
-  double pedal_cmd_ = 0.0;
+  double pedal_cmd_ = 0.0; ///< 刹车开度，单位百分比
   bool boo_cmd_ = false;
-  bool pedal_enable_ = false;
+  bool pedal_enable_ = false; ///< 刹车自动控制标志
   bool clear_driver_override_flag_ = false;
   bool ignore_driver_override_ = false;
   int32_t watchdog_counter_ = 0.0;

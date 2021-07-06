@@ -42,8 +42,10 @@ class Throttle63 : public ::apollo::drivers::canbus::ProtocolData<
  public:
   static const int32_t ID;
 
-  /*
+  /**
    * @brief parse received data
+   * @details 解析的内容有：
+   *          lincoln throttle 63，CheckResponseSignal.is_vcu_online
    * @param bytes a pointer to the input bytes
    * @param length the length of the input bytes
    * @param chassis_detail the parsed chassis_detail

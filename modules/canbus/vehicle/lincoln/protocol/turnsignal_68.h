@@ -44,7 +44,7 @@ class Turnsignal68 : public ::apollo::drivers::canbus::ProtocolData<
 
   /**
    * @brief get the data period
-   * @return the value of data period
+   * @return the value of data period 50ms
    */
   virtual uint32_t GetPeriod() const;
 
@@ -92,7 +92,7 @@ class Turnsignal68 : public ::apollo::drivers::canbus::ProtocolData<
   void set_turn_cmd_p(uint8_t *data, int32_t trncmd);
 
  private:
-  int32_t turn_cmd_ = 0;
+  int32_t turn_cmd_ = 0; ///< 转向控制
 };
 
 }  // namespace lincoln

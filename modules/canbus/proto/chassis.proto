@@ -10,6 +10,7 @@ import "modules/common/configs/proto/vehicle_config.proto";
 
 // next id :31
 message Chassis {
+  // 驾驶模式，不同驾驶模式，向can发送的物理量不同
   enum DrivingMode {
     COMPLETE_MANUAL = 0;  // human drive
     COMPLETE_AUTO_DRIVE = 1;
@@ -43,7 +44,7 @@ message Chassis {
   }
 
   enum GearPosition {
-    GEAR_NEUTRAL = 0;
+    GEAR_NEUTRAL = 0; ///< 空挡
     GEAR_DRIVE = 1;
     GEAR_REVERSE = 2;
     GEAR_PARKING = 3;

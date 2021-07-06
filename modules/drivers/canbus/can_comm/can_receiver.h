@@ -50,6 +50,9 @@ namespace canbus {
 /**
  * @class CanReceiver
  * @brief CAN receiver.
+ * @details 开启一个线程，不断接收底盘的can报文，根据其协议ID将其解析为消息类型并保存至数据成员中
+ *          - MessageManager，根据协议ID将can报文解析为消息类型
+ *          - CanClient，从can接收can报文
  */
 template <typename SensorType>
 class CanReceiver {
@@ -66,6 +69,7 @@ class CanReceiver {
 
   /**
    * @brief Initialize by a CAN client, message manager.
+   * @details 将数据成员当中的CanClient和MessageManager指针指向参数列表当中指定的对象，并做空指针检查
    * @param can_client The CAN client to use for receiving messages.
    * @param pt_manager The message manager which can parse and
    *        get protocol data by message id.
@@ -100,7 +104,7 @@ class CanReceiver {
   int32_t Start(bool is_blocked);
 
  private:
-  std::atomic<bool> is_running_ = {false};
+  std::atomic<bool> is_running_ = {false}; ///< 控制线程函数运行的标志
   // CanClient, MessageManager pointer life is managed by outer program
   CanClient *can_client_ = nullptr;
   MessageManager<SensorType> *pt_manager_ = nullptr;
@@ -130,6 +134,15 @@ template <typename SensorType>
   return ::apollo::common::ErrorCode::OK;
 }
 
+/**
+ * @brief 线程的入口函数
+ * @details 通过CanClient从can接收指定数目的can报文，并通过MessageManager，
+ *          根据该报文的协议ID将所有接收到的can报文解析为ChassisDetail消息类型，
+ *          存储在MessageManager的sensor_data_当中
+ * @note 对共享变量sensor_data_进行了写操作
+ * 
+ * @tparam SensorType 
+ */
 template <typename SensorType>
 void CanReceiver<SensorType>::RecvThreadFunc() {
   AINFO << "Can client receiver thread starts.";
@@ -141,9 +154,11 @@ void CanReceiver<SensorType>::RecvThreadFunc() {
   const int32_t ERROR_COUNT_MAX = 10;
   auto default_period = 10 * 1000;
 
+  // 通过CanClient从can接收指定数目的can报文，并通过MessageManager将can报文解析为消息类型，存储与其数据成员当中
   while (IsRunning()) {
     std::vector<CanFrame> buf;
     int32_t frame_num = MAX_CAN_RECV_FRAME_LEN;
+    // 从can中接收指定数目的can报文
     if (can_client_->Receive(&buf, &frame_num) !=
         ::apollo::common::ErrorCode::OK) {
       LOG_IF_EVERY_N(ERROR, receive_error_count++ > ERROR_COUNT_MAX,
@@ -173,7 +188,7 @@ void CanReceiver<SensorType>::RecvThreadFunc() {
       uint8_t len = frame.len;
       uint32_t uid = frame.id;
       const uint8_t *data = frame.data;
-      pt_manager_->Parse(uid, data, len);
+      pt_manager_->Parse(uid, data, len); // 对sensor_data_进行写操作
       if (enable_log_) {
         ADEBUG << "recv_can_frame#" << frame.CanFrameString();
       }
@@ -185,25 +200,39 @@ void CanReceiver<SensorType>::RecvThreadFunc() {
 
 template <typename SensorType>
 bool CanReceiver<SensorType>::IsRunning() const {
+  // load返回原子类型保存的变量
   return is_running_.load();
 }
 
+/**
+ * @brief 开启线程
+ * 
+ * @tparam SensorType 
+ * @return ::apollo::common::ErrorCode 
+ */
 template <typename SensorType>
 ::apollo::common::ErrorCode CanReceiver<SensorType>::Start() {
   if (is_init_ == false) {
     return ::apollo::common::ErrorCode::CANBUS_ERROR;
   }
+  // exchange改变原子类型变量的值，并返回原先的值
   is_running_.exchange(true);
 
   async_result_ = cyber::Async(&CanReceiver<SensorType>::RecvThreadFunc, this);
   return ::apollo::common::ErrorCode::OK;
 }
 
+/**
+ * @brief 停止线程，并阻塞等待其停止
+ * 
+ * @tparam SensorType 
+ */
 template <typename SensorType>
 void CanReceiver<SensorType>::Stop() {
   if (IsRunning()) {
     AINFO << "Stopping can client receiver ...";
     is_running_.exchange(false);
+    // 阻塞等待线程函数返回
     async_result_.wait();
   } else {
     AINFO << "Can client receiver is not running.";

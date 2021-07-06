@@ -45,10 +45,22 @@ typename std::enable_if<!HasShutdown<T>::value>::type CallShutdown(
 
 #define UNUSED(param) (void)param
 
+/**
+ * @brief 删除类的拷贝构造函数和拷贝赋值运算符
+ * 
+ */
 #define DISALLOW_COPY_AND_ASSIGN(classname) \
   classname(const classname &) = delete;    \
   classname &operator=(const classname &) = delete;
 
+/**
+ * @brief 将类声明为单例类
+ * @details Instance第一次调用时创建该类的堆对象并返回指向其的指针
+ * @note - std::call_once可保证该函数只被调用一次，且在多线程情况下互斥地调用
+ *       std::once_flag表示调用的状态，可保证共享变量互斥的初始化
+ *       - [&]代表lamda的隐式捕获列表，会根据函数体捕获其所在代码块的局部变量的引用
+ * 
+ */
 #define DECLARE_SINGLETON(classname)                                      \
  public:                                                                  \
   static classname *Instance(bool create_if_needed = true) {              \

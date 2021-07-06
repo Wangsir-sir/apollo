@@ -24,17 +24,37 @@ namespace canbus {
 using common::ErrorCode;
 using control::ControlCommand;
 
+/**
+ * @brief 返回当前车辆的驾驶模式
+ * @note 对driving_mode_的读操作
+ * 
+ * @return 当前车辆的驾驶模式
+ */
 Chassis::DrivingMode VehicleController::driving_mode() {
   std::lock_guard<std::mutex> lock(mode_mutex_);
   return driving_mode_;
 }
 
+/**
+ * @brief 设置当前的驾驶模式参数
+ * @note 对driving_mode_的写操作
+ * 
+ * @param driving_mode  要设置的当前的驾驶模式
+ */
 void VehicleController::set_driving_mode(
     const Chassis::DrivingMode &driving_mode) {
   std::lock_guard<std::mutex> lock(mode_mutex_);
   driving_mode_ = driving_mode;
 }
 
+/**
+ * @brief 设置当前驾驶模式要设置的当前的驾驶模式
+ * @details 若开启失败则会进入紧急模式。
+ *          若当前驾驶模式是紧急模式，则只能设置为手动模式
+ * 
+ * @param driving_mode 
+ * @return ErrorCode 设置操作的状态
+ */
 ErrorCode VehicleController::SetDrivingMode(
     const Chassis::DrivingMode &driving_mode) {
   if (driving_mode == Chassis::EMERGENCY_MODE) {
@@ -58,6 +78,7 @@ ErrorCode VehicleController::SetDrivingMode(
 
   switch (driving_mode) {
     case Chassis::COMPLETE_AUTO_DRIVE: {
+      // 若开启失败则会进入紧急模式
       if (EnableAutoMode() != ErrorCode::OK) {
         AERROR << "Failed to enable auto mode.";
         return ErrorCode::CANBUS_ERROR;
@@ -72,6 +93,7 @@ ErrorCode VehicleController::SetDrivingMode(
       break;
     }
     case Chassis::AUTO_STEER_ONLY: {
+      // // 若开启失败则会进入紧急模式
       if (EnableSteeringOnlyMode() != ErrorCode::OK) {
         AERROR << "Failed to enable steer only mode.";
         return ErrorCode::CANBUS_ERROR;
@@ -79,6 +101,7 @@ ErrorCode VehicleController::SetDrivingMode(
       break;
     }
     case Chassis::AUTO_SPEED_ONLY: {
+      // // 若开启失败则会进入紧急模式
       if (EnableSpeedOnlyMode() != ErrorCode::OK) {
         AERROR << "Failed to enable speed only mode";
         return ErrorCode::CANBUS_ERROR;
@@ -91,6 +114,17 @@ ErrorCode VehicleController::SetDrivingMode(
   return ErrorCode::OK;
 }
 
+/**
+ * @brief 更新车辆控制器，根据控制参数修改相关can发送协议的物理量
+ * @details 根据参数中的信息，更新车辆驾驶模式，
+ *          并根据当前不同的车辆驾驶模式以及参数当中的信息，设置相应的can协议的物理量，并忽略其他的控制信息
+ *          例如AUTO_SPEED_ONLY下根据控制参数，设置档位油门加速度刹车驻车的can协议的物理量，
+ *          而不会设置涉及转向can协议的物理量，即不会将控制信息当中涉及到转向的物理量发送给can
+ * @note VehicleController更新的是can协议类对象当中的物理量,并且再该函数当中没有更新can报文
+ * 
+ * @param control_command 
+ * @return ErrorCode 
+ */
 ErrorCode VehicleController::Update(const ControlCommand &control_command) {
   if (!is_initialized_) {
     AERROR << "Controller is not initialized.";
@@ -123,6 +157,7 @@ ErrorCode VehicleController::Update(const ControlCommand &control_command) {
     }
   }
 
+  // 速度自动控制，则需要修改以下can协议类的物理量数据成员
   if (driving_mode() == Chassis::COMPLETE_AUTO_DRIVE ||
       driving_mode() == Chassis::AUTO_SPEED_ONLY) {
     Gear(control_command.gear_location());
@@ -133,9 +168,11 @@ ErrorCode VehicleController::Update(const ControlCommand &control_command) {
     SetLimits();
   }
 
+  // 转向自动控制，则需要修改以下can协议类的物理量数据成员
   if (driving_mode() == Chassis::COMPLETE_AUTO_DRIVE ||
       driving_mode() == Chassis::AUTO_STEER_ONLY) {
     const double steering_rate_threshold = 1.0;
+    // 这个大于号是不是写错了？
     if (control_command.steering_rate() > steering_rate_threshold) {
       Steer(control_command.steering_target(), control_command.steering_rate());
     } else {
