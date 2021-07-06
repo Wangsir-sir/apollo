@@ -69,7 +69,7 @@ class FakeCanClient : public CanClient {
   void Stop() override;
 
   /**
-   * @brief Send messages
+   * @brief Send messages。只是将发送的can帧的信息打印ADEBUG和frame_info_
    * @param frames The messages to send.
    * @param frame_num The amount of messages to send.
    * @return The status of the sending action which is defined by
@@ -79,7 +79,7 @@ class FakeCanClient : public CanClient {
                                  int32_t *const frame_num) override;
 
   /**
-   * @brief Receive messages
+   * @brief Receive messages。只是接收一个假数据
    * @param frames The messages to receive.
    * @param frame_num The amount of messages to receive.
    * @return The status of the receiving action which is defined by

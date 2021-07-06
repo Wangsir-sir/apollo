@@ -55,6 +55,7 @@ namespace canbus {
  *
  * @brief canbus module main class.
  * It processes the control data to send protocol messages to can card.
+ * 会以interval的频率调用Proc函数
  */
 class CanbusComponent final : public apollo::cyber::TimerComponent {
  public:
@@ -90,12 +91,12 @@ class CanbusComponent final : public apollo::cyber::TimerComponent {
   apollo::common::Status OnError(const std::string &error_msg);
   void RegisterCanClients();
 
-  CanbusConf canbus_conf_;
+  CanbusConf canbus_conf_; ///< can卡配置
   std::shared_ptr<cyber::Reader<apollo::guardian::GuardianCommand>>
       guardian_cmd_reader_;
   std::shared_ptr<cyber::Reader<apollo::control::ControlCommand>>
       control_command_reader_;
-  std::unique_ptr<apollo::drivers::canbus::CanClient> can_client_;
+  std::unique_ptr<apollo::drivers::canbus::CanClient> can_client_; ///< CanClient的基类指针，实现继承多态
   CanSender<ChassisDetail> can_sender_;
   apollo::drivers::canbus::CanReceiver<ChassisDetail> can_receiver_;
   std::unique_ptr<MessageManager<ChassisDetail>> message_manager_;

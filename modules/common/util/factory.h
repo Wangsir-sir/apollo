@@ -47,8 +47,9 @@ namespace util {
  * defer the choice of the implementation in use.
  *
  * @param IdentifierType Type used for identifying the registered classes,
- * typically std::string.
+ * typically std::string.接口的名字
  * @param AbstractProduct The interface implemented by the registered classes
+ *                        要创建的接口
  * @param ProductCreator Function returning a pointer to an instance of
  * the registered class
  * @param MapContainer Internal implementation of the function mapping
@@ -66,11 +67,21 @@ class Factory {
    * @param creator Function returning a pointer to an instance of
    * the registered class
    * @return True if the key id is still available
+   * @note 对于std::map来说，其不允许重复的关键字，若插入一个已存在的关键字，则插入失败
+   *       insert的返回值是一个std::pair，first代表插入元素的迭代器，second代表是否插入成功
    */
   bool Register(const IdentifierType &id, ProductCreator creator) {
     return producers_.insert(std::make_pair(id, creator)).second;
   }
 
+  /**
+   * @brief 检查该类型是否在关联容器当中
+   * @note find函数查找的元素在容器中不存在，则返回一个尾后迭代器
+   * 
+   * @param id 要查找的类型
+   * @return true 该类型在关联容器当中
+   * @return false 该类型不在关联容器当中
+   */
   bool Contains(const IdentifierType &id) {
     return producers_.find(id) != producers_.end();
   }
@@ -93,6 +104,9 @@ class Factory {
    * silently.
    * @param id The identifier of the class we which to instantiate
    * @param args the object construction arguments
+   * @note - 对于map关联容器来讲，find返回值是mapped_pair，即一个std::pair对象
+   *       - std::unique_ptr虽然不支持拷贝，但支持返回，此时会发生浅复制
+   *       - 模板参数为右值引用，且转发使用std::forward，则会保持参数所有的属性，包括左值右值，const等
    */
   template <typename... Args>
   std::unique_ptr<AbstractProduct> CreateObjectOrNull(const IdentifierType &id,
@@ -104,12 +118,14 @@ class Factory {
     }
     return nullptr;
   }
-
+7=-
   /**
    * @brief Creates and transfers membership of an object of type matching id.
    * Need to register id before CreateObject is called.
    * @param id The identifier of the class we which to instantiate
    * @param args the object construction arguments
+   * @note - 使用可变参数列表，接受可变数目和可变类型的参数
+   *       - 使用类型参数的右值引用以及std::forward，可以转发参数所有的性质，包括左值右值，const等
    */
   template <typename... Args>
   std::unique_ptr<AbstractProduct> CreateObject(const IdentifierType &id,
@@ -120,7 +136,7 @@ class Factory {
   }
 
  private:
-  MapContainer producers_;
+  MapContainer producers_; ///< 保存该接口的名字和初始化该接口函数的关联容器
 };
 
 }  // namespace util

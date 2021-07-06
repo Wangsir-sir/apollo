@@ -14,6 +14,14 @@
  * limitations under the License.
  *****************************************************************************/
 
+/**
+ * @file config_gflags.cc
+ * @brief Apollo全局命令行选项参数文件
+ * @date 2021-07-01
+ * 
+ * 
+ */
+
 #include "modules/common/configs/config_gflags.h"
 
 DEFINE_string(map_dir, "/apollo/modules/map/data/demo",

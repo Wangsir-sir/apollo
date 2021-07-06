@@ -42,12 +42,15 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
  public:
   static const int32_t ID;
 
-  /*
+  /**
    * @brief parse received data
+   * @details 解析的ChassisDetail内容有：
+   *          lincoln brake 61 所有内容，CheckResponseSignal的is_eps_online
+   *          
    * @param bytes a pointer to the input bytes
    * @param length the length of the input bytes
    * @param timestamp the timestamp of input data
-   * @param chassis_detail the parsed chassis_detail
+   * @param chassis_detail 传出参数，the parsed chassis_detail
    */
   virtual void Parse(const std::uint8_t *bytes, int32_t length,
                      ChassisDetail *chassis_detail) const;
@@ -161,7 +164,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
   bool is_enabled(const std::uint8_t *bytes, int32_t length) const;
 
   /**
-   * brief check driver override
+   * @brief check driver override
    * config detail: {'name': 'override', 'offset': 0.0, 'precision': 1.0, 'len':
    * 1, 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 57, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
@@ -172,7 +175,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
   bool is_driver_override(const std::uint8_t *bytes, int32_t length) const;
 
   /**
-   * brief check if is_driver activity
+   * @brief check if is_driver activity
    * config detail: {'name': 'driver', 'offset': 0.0, 'precision': 1.0, 'len':
    * 1, 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 58, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
@@ -183,7 +186,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
   bool is_driver_activity(const std::uint8_t *bytes, int32_t length) const;
 
   /**
-   * brief check if is watchdog counter fault
+   * @brief check if is watchdog counter fault
    * config detail: {'name': 'fltwdc', 'offset': 0.0, 'precision': 1.0, 'len':
    * 1, 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 59, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
@@ -195,7 +198,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
                                  int32_t length) const;
 
   /**
-   * brief check if is channel 1 fault
+   * @brief check if is channel 1 fault
    * config detail: {'name': 'flt1', 'offset': 0.0, 'precision': 1.0, 'len': 1,
    * 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 60, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
@@ -206,7 +209,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
   bool is_channel_1_fault(const std::uint8_t *bytes, int32_t length) const;
 
   /**
-   * brief check if is channel 2 fault
+   * @brief check if is channel 2 fault
    * config detail: {'name': 'flt2', 'offset': 0.0, 'precision': 1.0, 'len': 1,
    * 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 61, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
@@ -217,7 +220,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
   bool is_channel_2_fault(const std::uint8_t *bytes, int32_t length) const;
 
   /**
-   * brief check if boo switch fault
+   * @brief check if boo switch fault
    * config detail: {'name': 'fltboo', 'offset': 0.0, 'precision': 1.0, 'len':
    * 1, 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 62, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}
@@ -228,7 +231,7 @@ class Brake61 : public ::apollo::drivers::canbus::ProtocolData<
   bool is_boo_switch_fault(const std::uint8_t *bytes, int32_t length) const;
 
   /**
-   * brief check if connector fault
+   * @brief check if connector fault
    * config detail: {'name': 'fltcon', 'offset': 0.0, 'precision': 1.0, 'len':
    * 1, 'f_type': 'valid', 'is_signed_var': False, 'physical_range': '[0|0]',
    * 'bit': 63, 'type': 'bool', 'order': 'intel', 'physical_unit': '""'}

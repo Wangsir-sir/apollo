@@ -113,8 +113,8 @@ class SocketCanClientRaw : public CanClient {
   int dev_handler_ = 0;
   CANCardParameter::CANChannelId port_;
   CANCardParameter::CANInterface interface_;
-  can_frame send_frames_[MAX_CAN_SEND_FRAME_LEN];
-  can_frame recv_frames_[MAX_CAN_RECV_FRAME_LEN];
+  can_frame send_frames_[MAX_CAN_SEND_FRAME_LEN]; ///< 发送的can帧数组
+  can_frame recv_frames_[MAX_CAN_RECV_FRAME_LEN]; ///< 接收的can帧数组
 };
 
 }  // namespace can

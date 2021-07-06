@@ -49,6 +49,7 @@ class CanClientFactory
    * @brief Register the CAN clients of all brands. This function call the
    *        Function apollo::common::util::Factory::Register() for all of the
    *        CAN clients.
+   *        通过apollo::common::util::Factory::Register()在关联容器当中加入接口名和创建该接口的函数的键值对
    */
   void RegisterCanClients();
 
@@ -57,10 +58,12 @@ class CanClientFactory
    *        set in the parameter.
    * @param parameter The parameter to create the CAN client.
    * @return A pointer to the created CAN client.
+   * @note 通过CANCardParameter类型的参数创建一个CanClient堆对象，而不是在文件当中指定，从而实现了松耦合
    */
   std::unique_ptr<CanClient> CreateCANClient(const CANCardParameter &parameter);
 
  private:
+  // 将CanClientFactory声明为单例类
   DECLARE_SINGLETON(CanClientFactory)
 };
 

@@ -44,7 +44,7 @@ class Gear66 : public ::apollo::drivers::canbus::ProtocolData<
 
   /**
    * @brief get the data period
-   * @return the value of data period
+   * @return the value of data period 10ms
    */
   virtual uint32_t GetPeriod() const;
 
@@ -113,7 +113,7 @@ class Gear66 : public ::apollo::drivers::canbus::ProtocolData<
   void set_clear_driver_override_flag_p(uint8_t *bytes);
 
  private:
-  int32_t gear_ = 0;
+  int32_t gear_ = 0; ///< 档位
   bool update_ = false;
 };
 

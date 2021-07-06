@@ -44,7 +44,7 @@ class Throttle62 : public ::apollo::drivers::canbus::ProtocolData<
 
   /**
    * @brief get the data period
-   * @return the value of data period
+   * @return the value of data period 10ms
    */
   virtual uint32_t GetPeriod() const;
 
@@ -121,8 +121,8 @@ class Throttle62 : public ::apollo::drivers::canbus::ProtocolData<
   void set_watchdog_counter_p(uint8_t *data, int32_t count);
 
  private:
-  double pedal_cmd_ = 0.0;
-  bool pedal_enable_ = false;
+  double pedal_cmd_ = 0.0; ///< 油门开度
+  bool pedal_enable_ = false; ///< 自动控制模式标志
   bool clear_driver_override_flag_ = false;
   bool ignore_driver_override_ = false;
   int32_t watchdog_counter_ = 0;

@@ -26,7 +26,7 @@ namespace devkit {
 class Brakecommand101 : public ::apollo::drivers::canbus::ProtocolData<
                             ::apollo::canbus::ChassisDetail> {
  public:
-  static const int32_t ID;
+  static const int32_t ID; ///< 标识该协议的ID号
 
   Brakecommand101();
 

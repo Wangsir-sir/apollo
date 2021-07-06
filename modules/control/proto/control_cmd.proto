@@ -25,14 +25,14 @@ message LatencyStats {
 message ControlCommand {
   optional apollo.common.Header header = 1;
   // target throttle in percentage [0, 100]
-  optional double throttle = 3;
+  optional double throttle = 3; ///< 油门开度
 
   // target brake in percentage [0, 100]
-  optional double brake = 4;
+  optional double brake = 4; ///< 刹车开度
 
   // target non-directional steering rate, in percentage of full scale per
   // second [0, 100]
-  optional double steering_rate = 6;
+  optional double steering_rate = 6; ///< 转向角速度相对于最大值的百分比
 
   // target steering angle, in percentage of full scale [-100, 100]
   optional double steering_target = 7;
@@ -44,7 +44,7 @@ message ControlCommand {
   optional double speed = 9;
 
   // target acceleration in m`s^-2
-  optional double acceleration = 10;
+  optional double acceleration = 10; ///< 加速度
 
   // model reset
   optional bool reset_model = 16 [deprecated = true];
@@ -54,10 +54,10 @@ message ControlCommand {
   optional double trajectory_fraction = 18;
   optional apollo.canbus.Chassis.DrivingMode driving_mode = 19
       [deprecated = true];
-  optional apollo.canbus.Chassis.GearPosition gear_location = 20;
+  optional apollo.canbus.Chassis.GearPosition gear_location = 20; ///< 车辆档位
 
   optional Debug debug = 22;
-  optional apollo.common.VehicleSignal signal = 23;
+  optional apollo.common.VehicleSignal signal = 23; // 车辆灯光以及喇叭信号
   optional LatencyStats latency_stats = 24;
   optional PadMessage pad_msg = 25;
   optional apollo.common.EngageAdvice engage_advice = 26;

@@ -39,6 +39,8 @@ namespace canbus {
  * @class ProtocolData
  *
  * @brief This is the base class of protocol data.
+ *        该类是各种can报文协议的基类，保存相关的物理量，修改该物理量的接口以及在can报文设置该物理量量的方法
+ * @note 
  */
 template <typename SensorType>
 class ProtocolData {
@@ -63,6 +65,7 @@ class ProtocolData {
 
   /*
    * @brief get interval period for canbus messages
+            返回规定的发送间隔,单位:纳秒
    * @return the interval period in us (1e-6s)
    */
   virtual uint32_t GetPeriod() const;
@@ -82,8 +85,12 @@ class ProtocolData {
   virtual void Parse(const uint8_t *bytes, int32_t length,
                      SensorType *sensor_data) const;
 
-  /*
-   * @brief update the data
+  /**
+   * @brief update the data。
+   * @details 根据保存的数据成员更新can报文
+   * @warning 每当数据成员发生变换时都要调用该函数，更新can报文
+   * 
+   * @param data 要更新的can报文的首字节指针
    */
   virtual void UpdateData(uint8_t *data);
 

@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package apollo.drivers.canbus;
 
+// 可用于初始化can_client
 message CANCardParameter {
   enum CANCardBrand {
     FAKE_CAN = 0;

@@ -44,7 +44,7 @@ class Steering64 : public ::apollo::drivers::canbus::ProtocolData<
 
   /**
    * @brief get the data period
-   * @return the value of data period
+   * @return the value of data period 10ms
    */
   virtual uint32_t GetPeriod() const;
 
@@ -130,11 +130,11 @@ class Steering64 : public ::apollo::drivers::canbus::ProtocolData<
   void set_disable_audible_warning_p(uint8_t *data, bool disable);
 
  private:
-  double steering_angle_ = 0.0;
-  bool steering_enable_ = false;
+  double steering_angle_ = 0.0; ///< 前轮转角，左为正，单位为弧度制
+  bool steering_enable_ = false; ///< 转向自动控制标志
   bool clear_driver_override_flag_ = false;
   bool ignore_driver_override_ = false;
-  double steering_angle_speed_ = 0.0;
+  double steering_angle_speed_ = 0.0; ///< 前轮转角角速度，单位弧度每秒
   int32_t watchdog_counter_ = 0;
   bool disable_audible_warning_ = false;
 };
