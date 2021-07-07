@@ -7,7 +7,7 @@ namespace apollo {
 namespace bridge {
 
 TEST(ProtobufManagerTest, CreateObj){
-    ProtobufManager protoManager;
+    ProtobufManager<::apollo::drivers::PointCloud> protoManager;
     auto ptr1 = protoManager.CreateObj(1);
     auto ptr2 = protoManager.CreateObj(1);
     auto ptr3 = protoManager.CreateObj(2);
@@ -17,18 +17,18 @@ TEST(ProtobufManagerTest, CreateObj){
 }
 
 TEST(ProtobufManagerTest, DestructObj){
-    ProtobufManager protoManager;
+    ProtobufManager<::apollo::drivers::PointCloud> protoManager;
     auto ptr1 = protoManager.CreateObj(1);
-    EXPECT_TRUE(protoManager.DestructObj(1))
+    EXPECT_TRUE(protoManager.DestructObj(1));
     EXPECT_FALSE(protoManager.DestructObj(2));
 }
 
 TEST(ProtobufManagerTest, getTimeStamp){
-    ProtobufManager protoManager;
+    ProtobufManager<::apollo::drivers::PointCloud> protoManager;
     auto ptr1 = protoManager.CreateObj(1);
     auto ptr2 = protoManager.CreateObj(1);
     auto ptr3 = protoManager.CreateObj(2);
-    EXPECT_NE(protoManager.getTimeStamp(1), protoManager.getTimeStamp(2))
+    EXPECT_NE(protoManager.getTimeStamp(1), protoManager.getTimeStamp(2));
 }
 
 

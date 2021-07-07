@@ -57,11 +57,30 @@ cc_library(
 )
 
 cc_library(
+    name = "protobuf_manager",
+    hdrs = ["protobuf_manager.h"],
+    deps = [
+        "//modules/drivers/proto:pointcloud_cc_proto",
+    ]
+)
+
+cc_library(
     name = "bridge_header",
     srcs = ["bridge_header.cc"],
     hdrs = [
         "bridge_header.h",
         "bridge_header_item.h",
+    ],
+)
+
+cc_test(
+    name = "protobuf_manager_test",
+    size = "small",
+    srcs = ["protobuf_manager_test.cpp"],
+    deps = [
+        "//cyber",
+        ":protobuf_manager",
+        "@com_google_googletest//:gtest_main",
     ],
 )
 
