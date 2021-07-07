@@ -23,9 +23,11 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <atomic>
 
 #include "modules/bridge/proto/udp_bridge_remote_info.pb.h"
 #include "modules/canbus/proto/chassis.pb.h"
+#include "modules/drivers/proto/pointcloud.pb.h"
 
 #include "cyber/class_loader/class_loader.h"
 #include "cyber/component/component.h"
@@ -37,6 +39,7 @@
 #include "modules/bridge/common/bridge_proto_diserialized_buf.h"
 #include "modules/bridge/common/udp_listener.h"
 #include "modules/common/monitor_log/monitor_log_buffer.h"
+#include "modules/bridge/common/protobuf_manager.h"
 
 namespace apollo {
 namespace bridge {
@@ -54,6 +57,7 @@ class UDPBridgeReceiverComponent final : public cyber::Component<> {
 
   std::string Name() const { return FLAGS_bridge_module_name; }
   bool MsgHandle(int fd);
+  bool PrescanMsgHandle(int fd);
 
  private:
   bool InitSession(uint16_t port);
@@ -70,13 +74,14 @@ class UDPBridgeReceiverComponent final : public cyber::Component<> {
   std::string proto_name_ = "";
   std::string topic_name_ = "";
   bool enable_timeout_ = true;
-  std::shared_ptr<cyber::Writer<T>> writer_;
+  std::shared_ptr<cyber::Writer<apollo::drivers::PointCloud>> writer_;
   std::mutex mutex_;
 
   std::shared_ptr<UDPListener<UDPBridgeReceiverComponent<T>>> listener_ =
       std::make_shared<UDPListener<UDPBridgeReceiverComponent<T>>>();
 
   std::vector<BridgeProtoDiserializedBuf<T> *> proto_list_;
+  ProtobufManager<::apollo::drivers::PointCloud> protoManager_;
 };
 
 RECEIVER_BRIDGE_COMPONENT_REGISTER(canbus::Chassis)
