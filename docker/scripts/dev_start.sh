@@ -431,11 +431,19 @@ function main() {
 
     # 启动DEV_CONTAINER容器
     # -itd会使容器一直保持后台运行，除非stop容器
+    #--privileged使容器中的用户拥有真正的root权限
+    # 设置容器中的环境变量
+    # 将保存了数据的数据卷挂载到容器的相应位置
+    # 将map容器的数据卷挂载到DEV_CONTAINER容器当中
+    # 将其他容器的数据卷挂载到DEV_CONTAINER容器当中
+    # 其他数据卷挂载
+    # –net=host 共享主机网络空间，可以像普通进程一样进行网络通信
+    # 设置工作空间
+    # --add-host相当于在/ect/hosts添加解析的IP地址
+    # 设置容器当中的主机名
     ${DOCKER_RUN_CMD} -itd \
-        #--privileged使容器中的用户拥有真正的root权限
-        --privileged \ 
+        --privileged \
         --name "${DEV_CONTAINER}" \
-        # 设置容器中的环境变量
         -e DISPLAY="${display}" \
         -e DOCKER_USER="${user}" \
         -e USER="${user}" \
@@ -446,21 +454,13 @@ function main() {
         -e USE_GPU_HOST="${USE_GPU_HOST}" \
         -e NVIDIA_VISIBLE_DEVICES=all \
         -e NVIDIA_DRIVER_CAPABILITIES=compute,video,graphics,utility \
-        # 将保存了数据的数据卷挂载到容器的相应位置
-        # 将map容器的数据卷挂载到DEV_CONTAINER容器当中
         ${MAP_VOLUMES_CONF} \
-        # 将其他容器的数据卷挂载到DEV_CONTAINER容器当中
         ${OTHER_VOLUMES_CONF} \
-        # 其他数据卷挂载
         ${local_volumes} \
-        # –net=host 共享主机网络空间，可以像普通进程一样进行网络通信
         --net host \
-        # 设置工作空间
         -w /apollo \
-        # --add-host相当于在/ect/hosts添加解析的IP地址
         --add-host "${DEV_INSIDE}:127.0.0.1" \
         --add-host "${local_host}:127.0.0.1" \
-        # 设置容器当中的主机名
         --hostname "${DEV_INSIDE}" \
         --shm-size "${SHM_SIZE}" \
         --pid=host \

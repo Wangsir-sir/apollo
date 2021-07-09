@@ -208,6 +208,7 @@ void CanbusComponent::Clear() {
  */
 void CanbusComponent::PublishChassis() {
   Chassis chassis = vehicle_controller_->chassis();
+  // 添加首部信息
   common::util::FillHeader(node_->Name(), &chassis);
   chassis_writer_->Write(chassis);
   ADEBUG << chassis.ShortDebugString();
