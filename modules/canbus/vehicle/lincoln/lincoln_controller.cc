@@ -425,6 +425,7 @@ void LincolnController::Emergency() {
 
 /**
  * @brief 进入自动驾驶模式
+ * @details 设置相应的使能，并根据底盘反馈信息，检查转向和速度单元是否正常
  * 
  * @return ErrorCode 状态，若开启失败则会进入紧急模式
  */
@@ -440,7 +441,7 @@ ErrorCode LincolnController::EnableAutoMode() {
 
   // 更新发送can类当中所有can协议报文
   can_sender_->Update();
-  // 检查转向和速度单元是否正常,若相关的底盘模块不正常，会进入紧急模式
+  // 根据底盘反馈信息，检查转向和速度单元是否正常,若相关的底盘模块不正常，会进入紧急模式
   const int32_t flag =
       CHECK_RESPONSE_STEER_UNIT_FLAG | CHECK_RESPONSE_SPEED_UNIT_FLAG;
   if (!CheckResponse(flag, true)) {
@@ -470,6 +471,7 @@ ErrorCode LincolnController::DisableAutoMode() {
 
 /**
  * @brief 进入自动转向模式
+ * @details 设置相应的使能，并根据底盘反馈信息，检查转向和速度单元是否正常
  * 
  * @return ErrorCode 状态，若开启失败则会进入紧急模式
  */
@@ -501,6 +503,7 @@ ErrorCode LincolnController::EnableSteeringOnlyMode() {
 
 /**
  * @brief 进入自动速度模式
+ * @details 设置相应的使能，并根据底盘反馈信息，检查转向和速度单元是否正常
  * 
  * @return ErrorCode 状态，若开启失败则会进入紧急模式
  */
@@ -991,11 +994,13 @@ bool LincolnController::CheckResponse(const int32_t flags, bool need_wait) {
   bool is_esp_online = false;
 
   do {
+    // 获取当前底盘反馈信息
     if (message_manager_->GetSensorData(&chassis_detail) != ErrorCode::OK) {
       AERROR_EVERY(100) << "Get chassis detail failed.";
       return false;
     }
     bool check_ok = true;
+    // 检查底盘转向功能，eps
     if (flags & CHECK_RESPONSE_STEER_UNIT_FLAG) {
       is_eps_online = chassis_detail.has_check_response() &&
                       chassis_detail.check_response().has_is_eps_online() &&
@@ -1003,6 +1008,7 @@ bool LincolnController::CheckResponse(const int32_t flags, bool need_wait) {
       check_ok = check_ok && is_eps_online;
     }
 
+    // 检查底盘速度控制功能，vuc和esp
     if (flags & CHECK_RESPONSE_SPEED_UNIT_FLAG) {
       is_vcu_online = chassis_detail.has_check_response() &&
                       chassis_detail.check_response().has_is_vcu_online() &&

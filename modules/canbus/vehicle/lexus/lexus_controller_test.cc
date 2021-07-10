@@ -67,6 +67,7 @@ TEST_F(LexusControllerTest, SetDrivingMode) {
   chassis.set_driving_mode(Chassis::COMPLETE_AUTO_DRIVE);
 
   controller_.Init(params_, &sender_, &msg_manager_);
+  EXPECT_EQ(controller_.SetDrivingMode(chassis.driving_mode()), ErrorCode::CANBUS_ERROR);
   controller_.set_driving_mode(chassis.driving_mode());
   EXPECT_EQ(controller_.driving_mode(), chassis.driving_mode());
   EXPECT_EQ(controller_.SetDrivingMode(chassis.driving_mode()), ErrorCode::OK);
