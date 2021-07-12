@@ -138,14 +138,16 @@ class SpiralSmootherUtil {
       AERROR << "Fail to open file " << filename;
       return;
     }
+    // 设置浮点数的精度
     ofs.precision(12);
     // skip the first point and the last point
     for (size_t i = 1; i + 1 < smoothed_points.size(); ++i) {
       const auto& point = smoothed_points[i];
+      // std::fixed它表示浮点输出应该以固定点或小数点表示法显示,既不会自动转换为科学计数法
       ofs << std::fixed << "{\"kappa\": " << point.kappa()
           << ", \"s\": " << point.s() << ", \"theta\": " << point.theta()
           << ", \"x\":" << point.x() << ", \"y\":" << point.y()
-          << ", \"dkappa\":" << point.dkappa() << "}";
+          << ", \"dkappa\":" << point.dkappa() << "}" << '\n';
     }
     ofs.close();
     AINFO << "Smoothed result saved to " << filename;

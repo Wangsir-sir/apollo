@@ -202,7 +202,7 @@ bool NavigationLane::GeneratePath() {
     // Don't worry about efficiency because the total number of navigation lines
     // will not exceed 10 at most.
     // 遍历所有的导航路径（个数由navigator的命令行参数中解析文件的个数决定）
-    // 进行了坐标转换,存储在了元组navigation_path_list_当中
+    // 进行了坐标转换,使用默认的车道线宽度，存储在了元组navigation_path_list_当中
     for (int i = 0; i < navigation_line_num; ++i) {
       auto current_navi_path = std::make_shared<NavigationPath>();
       auto *path = current_navi_path->mutable_path();
@@ -252,6 +252,7 @@ bool NavigationLane::GeneratePath() {
 
     // Merge current navigation path where the vehicle is located with perceived
     // lane markers.
+    // 只会对车辆所在的导航路径以及车道线宽度进行修正
     auto *path = std::get<3>(current_navi_path_tuple_)->mutable_path();
     MergeNavigationLineAndLaneMarker(std::get<0>(current_navi_path_tuple_),
                                      path);
@@ -762,6 +763,7 @@ bool NavigationLane::CreateMap(const MapGenerationParam &map_config,
     }
   }
 
+  // 为每条导航路径生成高精地图里的车道信息
   int fail_num = 0;
   FLAGS_relative_map_generate_left_boundray = true;
   for (auto iter = navigation_path_list_.cbegin();
@@ -792,6 +794,7 @@ bool NavigationLane::CreateMap(const MapGenerationParam &map_config,
   int lane_num = hdmap->lane_size();
   ADEBUG << "The Lane number is: " << lane_num;
 
+  // 生成高精地图里的道路信息，但只支持生成同向行驶的单条道路
   // Set road boundary
   auto *road = hdmap->add_road();
   road->mutable_id()->set_id("road_" + hdmap->lane(0).id().id());
