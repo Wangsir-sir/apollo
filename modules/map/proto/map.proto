@@ -44,14 +44,14 @@ message Map {
 
   repeated Crosswalk crosswalk = 2;
   repeated Junction junction = 3;
-  repeated Lane lane = 4;
+  repeated Lane lane = 4; //车道
   repeated StopSign stop_sign = 5;
   repeated Signal signal = 6;
   repeated YieldSign yield = 7;
   repeated Overlap overlap = 8;
-  repeated ClearArea clear_area = 9;
+  repeated ClearArea clear_area = 9; //禁止停车区域
   repeated SpeedBump speed_bump = 10;
-  repeated Road road = 11;
+  repeated Road road = 11; //道路
   repeated ParkingSpace parking_space = 12;
   repeated PNCJunction pnc_junction = 13;
   repeated RSU rsu = 14;

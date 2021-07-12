@@ -112,6 +112,7 @@ class NavigationLane {
 
   /**
    * @brief Update navigation line information.
+   * @details Navigator理论上只需要发布一次即可，但是为了保证消息被正确接收，Navigator通常会一次性发布多次，因此NavigationInfo也会被一次性更新多次
    * @param navigation_info Navigation line information to be updated.
    * @return None.
    */
@@ -163,6 +164,10 @@ class NavigationLane {
    * @brief Generate a real-time relative map of approximately 250 m in length
    * based on several navigation line segments and map generation configuration
    * information.
+   * @details 高精地图hdmap::Map得到了以下信息：
+   *          hdmap.lane: id、type、turn、speed_limit、central_curve、left_boundary、
+   *          right_boundary、left_sample、right_sample
+   *          hdmap.road: id、section
    * @param map_config Map generation configuration information.
    * @param map_msg A pointer which outputs the real-time relative map.
    * @return True if the real-time relative map is created; false otherwise.

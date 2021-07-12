@@ -81,6 +81,12 @@ bool RelativeMap::Process(MapMsg* const map_msg) {
   return true;
 }
 
+/**
+ * @brief /apollo/navigation 话题的回调函数的处理函数
+ * @details Navigator理论上只需要发布一次即可，但是为了保证消息被正确接收，Navigator通常会发布多次
+ * 
+ * @param navigation_info Navigator根据制作好的平滑轨迹解析而成带有首部的导航路径
+ */
 void RelativeMap::OnNavigationInfo(const NavigationInfo& navigation_info) {
   {
     std::lock_guard<std::mutex> lock(navigation_lane_mutex_);
@@ -110,6 +116,26 @@ void RelativeMap::OnLocalization(const LocalizationEstimate& localization) {
   }
 }
 
+/**
+ * @brief 
+ * 
+ * @param map_msg 传出参数, 经计算得到的相对地图
+ * @details 该函数会以一定的频率调用
+ *          - 若使用PERCEPTION模式,则会通过感知的车道线,
+ *          获得车辆所在位置周围的一条导航路径current_navi_path_tuple_,
+ *          根据这一条导航路径生成对应的相对地图
+ *          - 若使用OFFLINE_GENERATED模式并且信息有效时,使用Navigator生成的导航路径,
+ *          将其进行坐标转换,并获得车辆所在位置的导航路径,设置左右车道线宽度,并通过感知得到的车道线信息,对导航路径进行修正,
+ *          然后设置其他路径的宽度,根据所有的导航路径生成相对地图
+ * 
+ *          感知模块作用：
+ *          - 填充相对地图中的车道线信息
+ *          - 当不使用navigator提供的导航路径时，制作相对地图
+ *          - 当使用navigator提供的导航路径时，对导航路径产的车道线进行修正
+ *          - 填充车道线的类型
+ * @return true 
+ * @return false 
+ */
 bool RelativeMap::CreateMapFromNavigationLane(MapMsg* map_msg) {
   CHECK_NOTNULL(map_msg);
 
