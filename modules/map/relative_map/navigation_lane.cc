@@ -50,9 +50,14 @@ namespace {
  * @param map_config Map generation configuration information.
  * @param perception_obstacles The Perceived obstacle information and the lane
  * markings are used here.
+ *        只是通过感知模块获得车道线的类型LaneBoundaryType
  * @param hdmap The output single lane map in high-definition map format in the
  * relative map.
  * @param navigation_path The output navigation path map in the relative map.
+ * @details 高精地图hdmap::Map得到了以下信息：
+ *          hdmap.lane: id、type、turn、speed_limit、central_curve、left_boundary、
+ *          right_boundary、left_sample、right_sample
+ *          
  * @return True if the map is created; false otherwise.
  */
 bool CreateSingleLaneMap(
@@ -111,7 +116,9 @@ bool CreateSingleLaneMap(
   const double lane_left_width = std::get<1>(navi_path_tuple);
   const double lane_right_width = std::get<2>(navi_path_tuple);
 
+  // 遍历导航路径中所有的点
   for (const auto &path_point : path.path_point()) {
+    // 根据导航路径的点填充高精地图中的central_curve
     auto *point = line_segment->add_point();
     point->set_x(path_point.x());
     point->set_y(path_point.y());
@@ -120,6 +127,7 @@ bool CreateSingleLaneMap(
       auto *left_sample = lane->add_left_sample();
       left_sample->set_s(path_point.s());
       left_sample->set_width(lane_left_width);
+      // 根据lane_left_width获得左边界的点
       left_segment->add_point()->CopyFrom(
           *point + lane_left_width *
                        Vec2d::CreateUnitVec2d(path_point.theta() + M_PI_2));
@@ -128,6 +136,7 @@ bool CreateSingleLaneMap(
     auto *right_sample = lane->add_right_sample();
     right_sample->set_s(path_point.s());
     right_sample->set_width(lane_right_width);
+    // 根据lane_right_width获得右边界的点
     right_segment->add_point()->CopyFrom(
         *point +
         lane_right_width * Vec2d::CreateUnitVec2d(path_point.theta() - M_PI_2));
@@ -166,6 +175,7 @@ bool NavigationLane::GeneratePath() {
   // original_pose is in world coordination: ENU
   original_pose_ = vehicle_state_provider_->original_pose();
 
+  // 导航路径的个数由navigator的命令行参数中解析文件的个数决定
   int navigation_line_num = navigation_info_.navigation_path_size();
   const auto &lane_marker = perception_obstacles_.lane_marker();
 
@@ -191,6 +201,8 @@ bool NavigationLane::GeneratePath() {
     // Generate multiple navigation paths based on navigation lines.
     // Don't worry about efficiency because the total number of navigation lines
     // will not exceed 10 at most.
+    // 遍历所有的导航路径（个数由navigator的命令行参数中解析文件的个数决定）
+    // 进行了坐标转换,存储在了元组navigation_path_list_当中
     for (int i = 0; i < navigation_line_num; ++i) {
       auto current_navi_path = std::make_shared<NavigationPath>();
       auto *path = current_navi_path->mutable_path();
@@ -788,11 +800,13 @@ bool NavigationLane::CreateMap(const MapGenerationParam &map_config,
     auto *lane_id = section->add_lane_id();
     lane_id->CopyFrom(hdmap->lane(0).id());
   }
+  // 设置道路左边界为排序后第一个车道的左车道线
   auto *outer_polygon = section->mutable_boundary()->mutable_outer_polygon();
   auto *left_edge = outer_polygon->add_edge();
   left_edge->set_type(apollo::hdmap::BoundaryEdge::LEFT_BOUNDARY);
   left_edge->mutable_curve()->CopyFrom(hdmap->lane(0).left_boundary().curve());
 
+  // 设置道路右边界为排序后最后一个车道的右车道线
   auto *right_edge = outer_polygon->add_edge();
   right_edge->set_type(apollo::hdmap::BoundaryEdge::RIGHT_BOUNDARY);
   right_edge->mutable_curve()->CopyFrom(
@@ -802,6 +816,7 @@ bool NavigationLane::CreateMap(const MapGenerationParam &map_config,
   if (lane_num < 2) {
     return true;
   }
+  // 添加每个车道的相邻车道的信息
   for (int i = 0; i < lane_num; ++i) {
     auto *lane = hdmap->mutable_lane(i);
     if (i > 0) {

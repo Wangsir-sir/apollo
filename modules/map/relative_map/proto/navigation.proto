@@ -11,12 +11,12 @@ import "modules/perception/proto/perception_obstacle.proto";
 message NavigationPath {
   optional apollo.common.Path path = 1;
   // highest = 0 which can directly reach destination; change lane indicator
-  optional uint32 path_priority = 2;
+  optional uint32 path_priority = 2; // 根据navigator中命令行参数的顺序分配优先级，第一个是0，然后递增
 }
 
 message NavigationInfo {
   optional apollo.common.Header header = 1;
-  repeated NavigationPath navigation_path = 2;
+  repeated NavigationPath navigation_path = 2; ///< 导航线条，其个数由navigator中命令行参数的解析文件的个数决定
 }
 
 // The map message in transmission format.
