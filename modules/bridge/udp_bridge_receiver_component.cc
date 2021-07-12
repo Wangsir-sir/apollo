@@ -51,7 +51,7 @@ bool UDPBridgeReceiverComponent<T>::Init() {
   enable_timeout_ = udp_bridge_remote.enable_timeout();
   ADEBUG << "UDP Bridge remote port is: " << bind_port_;
   ADEBUG << "UDP Bridge for Proto is: " << proto_name_;
-  writer_ = node_->CreateWriter<T>(topic_name_.c_str());
+  writer_ = node_->CreateWriter<apollo::drivers::PointCloud>(topic_name_.c_str());
 
   if (!InitSession((uint16_t)bind_port_)) {
     return false;
@@ -63,7 +63,7 @@ bool UDPBridgeReceiverComponent<T>::Init() {
 
 template <typename T>
 bool UDPBridgeReceiverComponent<T>::InitSession(uint16_t port) {
-  return listener_->Initialize(this, &UDPBridgeReceiverComponent<T>::MsgHandle,
+  return listener_->Initialize(this, &UDPBridgeReceiverComponent<T>::PrescanMsgHandle,
                                port);
 }
 
