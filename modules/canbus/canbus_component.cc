@@ -208,6 +208,7 @@ void CanbusComponent::Clear() {
  */
 void CanbusComponent::PublishChassis() {
   Chassis chassis = vehicle_controller_->chassis();
+  // 添加首部信息
   common::util::FillHeader(node_->Name(), &chassis);
   chassis_writer_->Write(chassis);
   ADEBUG << chassis.ShortDebugString();
@@ -269,14 +270,12 @@ void CanbusComponent::OnControlCommand(const ControlCommand &control_command) {
          << " micro seconds";
 
   // vehicle_controller_更新,根据控制参数当中的物理量以及当前车辆驾驶模式,更新相应发送协议的物理量
-  
   if (vehicle_controller_->Update(control_command) != ErrorCode::OK) {
     AERROR << "Failed to process callback function OnControlCommand because "
               "vehicle_controller_->Update error.";
     return;
   }
   // can_sender_更新，根据各个发送给can的协议类对象当中的物理量更新各自的can报文
-  // 对can_frame_to_send_的写操作
   can_sender_.Update();
 }
 

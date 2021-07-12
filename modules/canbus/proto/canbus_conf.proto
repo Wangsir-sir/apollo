@@ -5,7 +5,7 @@ package apollo.canbus;
 import "modules/drivers/canbus/proto/can_card_parameter.proto";
 import "modules/canbus/proto/vehicle_parameter.proto";
 
-# CanbusComponent使用的can卡总配置
+// CanbusComponent使用的can卡总配置
 message CanbusConf {
   optional VehicleParameter vehicle_parameter = 1;
   optional apollo.drivers.canbus.CANCardParameter can_card_parameter = 2;

@@ -118,7 +118,7 @@ class Factory {
     }
     return nullptr;
   }
-7=-
+  
   /**
    * @brief Creates and transfers membership of an object of type matching id.
    * Need to register id before CreateObject is called.

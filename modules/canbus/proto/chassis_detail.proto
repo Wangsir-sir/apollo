@@ -32,7 +32,7 @@ message ChassisDetail {
   optional Eps eps = 12;                    // Electronic Power Steering
   optional Light light = 13;                // Light
   optional Battery battery = 14;            // Battery info
-  optional CheckResponseSignal check_response = 15;
+  optional CheckResponseSignal check_response = 15; // 检查底盘相关模块是否工作正常
   optional License license = 16 [deprecated = true];  // License info
   optional Surround surround = 17;                    // Surround information
   optional Gem gem = 18;
@@ -48,7 +48,7 @@ message ChassisDetail {
   optional apollo.common.VehicleID vehicle_id = 101;
 }
 
-// CheckResponseSignal
+// CheckResponseSignal 用于检查底盘相关模块是否工作正常
 message CheckResponseSignal {
   optional bool is_eps_online = 1 [default = false];   // byd:0x34C qirui:0x505
   optional bool is_epb_online = 2 [default = false];   // byd:0x218

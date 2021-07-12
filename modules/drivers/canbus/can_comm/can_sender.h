@@ -417,7 +417,7 @@ common::ErrorCode CanSender<SensorType>::Start() {
 template <typename SensorType>
 void CanSender<SensorType>::Update() {
   for (auto &message : send_messages_) {
-    message.Update();
+    message.Update(); // 在主线程当中可能发生写操作？
   }
 }
 

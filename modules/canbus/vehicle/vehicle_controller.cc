@@ -144,6 +144,7 @@ ErrorCode VehicleController::Update(const ControlCommand &control_command) {
       case control::DrivingAction::STOP:
       case control::DrivingAction::RESET: {
         // In COMPLETE_MANUAL mode
+        mode = Chassis::COMPLETE_MANUAL;
         break;
       }
       default: {
