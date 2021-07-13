@@ -77,6 +77,8 @@ int main(int argc, char** argv) {
 
   NavigationInfo navigation_info;
   int i = 0;
+  // 遍历命令行参数中指定的文件名，每个文件创建一条路径
+  // 根据navigator中命令行参数的顺序分配优先级，第一个是0，然后递增
   for (const std::string& filename : navigation_line_filenames) {
     auto* navigation_path = navigation_info.add_navigation_path();
     if (!GetNavigationPathFromFile(filename, navigator_config,
@@ -103,7 +105,7 @@ int main(int argc, char** argv) {
   // such as the network delay, We send it several times to ensure that the data
   // is sent successfully.
   Rate rate(1.0);
-  static constexpr int kTransNum = 3;
+  static constexpr int kTransNum = 3; // 发送的个数
   int trans_num = 0;
   while (apollo::cyber::OK()) {
     if (trans_num > kTransNum) {
@@ -119,6 +121,15 @@ int main(int argc, char** argv) {
   return 0;
 }
 
+/**
+ * @brief 解析命令行参数，获得命令行当中的文件名
+ * 
+ * @param argc 命令行参数格式
+ * @param argv 命令行参数
+ * @param navigation_line_filenames 传出参数，解析后的文件名
+ * @return true 解析成功
+ * @return false 解析失败
+ */
 bool ParseNavigationLineFileNames(
     int argc, char** argv,
     std::vector<std::string>* navigation_line_filenames) {
@@ -140,6 +151,16 @@ bool ParseNavigationLineFileNames(
   return initialized;
 }
 
+/**
+ * @brief 解析指定的文件，获得导航路径NavigationPath
+ * @details 导航路径点的个数等于文件中点的个数
+ * 
+ * @param filename 指定的文件
+ * @param navigator_config 配置参数
+ * @param navigation_path 传出参数，导航路径
+ * @return true 解析成功
+ * @return false 解析失败
+ */
 bool GetNavigationPathFromFile(const std::string& filename,
                                const NavigatorConfig& navigator_config,
                                NavigationPath* navigation_path) {
@@ -158,6 +179,7 @@ bool GetNavigationPathFromFile(const std::string& filename,
   int original_points_num = 0;
   int down_sampled_points_num = 0;
   const auto& sample_param = navigator_config.sample_param();
+  // 一行对应一个点的信息
   while (std::getline(ifs, line_str)) {
     try {
       auto json_obj = json::parse(line_str);
