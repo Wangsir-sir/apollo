@@ -21,17 +21,19 @@ enum Mode {
   DUAL = 3;
 }
 
+// 激光雷达原始数据包
 message VelodynePacket {
-  optional uint64 stamp = 1;
-  optional bytes data = 2;
+  optional uint64 stamp = 1; ///< 时间戳为开始接收和完成接收数据的中间时刻
+  optional bytes data = 2; ///< 根据UDP协议读取的元素数据，
 }
 
+// 激光雷达原始数据，对应一个激光点云
 message VelodyneScan {
   optional apollo.common.Header header = 1;
   optional Model model = 2;  // velodyne device model
   optional Mode mode = 3;    // velodyne work mode
 
-  repeated VelodynePacket firing_pkts = 4;
+  repeated VelodynePacket firing_pkts = 4; // 原始数据包的个数由npackets指定
 
   // for HDL32 and VLP16
   repeated VelodynePacket positioning_pkts = 5;

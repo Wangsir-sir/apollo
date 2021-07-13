@@ -33,6 +33,7 @@ namespace velodyne {
 constexpr int BLOCKS_PER_PACKET = 12;
 constexpr int BLOCK_SIZE = 100;
 
+// 不同型号的packet_rate_
 constexpr double PACKET_RATE_VLP16 = 754;
 constexpr double PACKET_RATE_HDL32E = 1808.0;
 constexpr double PACKET_RATE_HDL64E_S2 = 3472.17;
@@ -61,7 +62,7 @@ class VelodyneDriver : public lidar::LidarDriver {
  protected:
   std::thread poll_thread_;
   Config config_;
-  std::shared_ptr<apollo::cyber::Writer<VelodyneScan>> writer_;
+  std::shared_ptr<apollo::cyber::Writer<VelodyneScan>> writer_; ///< 发布激光雷达原始数据
   std::unique_ptr<Input> input_ = nullptr;
   std::unique_ptr<Input> positioning_input_ = nullptr;
   std::string topic_;
@@ -98,6 +99,10 @@ class Velodyne64Driver : public VelodyneDriver {
   int PollStandardSync(std::shared_ptr<VelodyneScan> scan);
 };
 
+/**
+ * @brief Velodyne激光雷达驱动工厂
+ * 
+ */
 class VelodyneDriverFactory {
  public:
   static VelodyneDriver *CreateDriver(

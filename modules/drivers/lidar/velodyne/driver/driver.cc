@@ -40,6 +40,14 @@ VelodyneDriver::~VelodyneDriver() {
   }
 }
 
+/**
+ * @brief 初始化Velodyne驱动
+ * @details 设置npackets，启动两个线程,分别读取基本时间，
+ *          根据UDP协议读取激光雷达原始数据并发布至相关话题
+ * 
+ * @return true 
+ * @return false 
+ */
 bool VelodyneDriver::Init() {
   double frequency = (config_.rpm() / 60.0);  // expected Hz rate
 
@@ -63,6 +71,12 @@ bool VelodyneDriver::Init() {
   return true;
 }
 
+/**
+ * @brief 根据nmea时间设置基本时间
+ * 
+ * @param nmea_time nmea时间
+ * @param basetime 传出参数，根据nmea时间设置的基本时间
+ */
 void VelodyneDriver::SetBaseTimeFromNmeaTime(NMEATimePtr nmea_time,
                                              uint64_t* basetime) {
   struct tm time;
@@ -100,7 +114,9 @@ bool VelodyneDriver::SetBaseTime() {
   return true;
 }
 
-/** poll the device
+/** 
+ * @brief poll the device
+ * @param scan 传出参数，通过UDP协议接收的激光雷达原始数据
  *
  *  @returns true unless end of file reached
  */
@@ -113,6 +129,7 @@ bool VelodyneDriver::Poll(const std::shared_ptr<VelodyneScan>& scan) {
     return false;
   }
 
+  // 接收npackets个数的原始数据包
   int poll_result = PollStandard(scan);
 
   if (poll_result == SOCKET_TIMEOUT || poll_result == RECEIVE_FAIL) {
@@ -141,9 +158,16 @@ bool VelodyneDriver::Poll(const std::shared_ptr<VelodyneScan>& scan) {
   return true;
 }
 
+/**
+ * @brief 接收npackets个数的原始数据包
+ * 
+ * @param scan 传出参数，原始激光雷达数据
+ * @return int 
+ */
 int VelodyneDriver::PollStandard(std::shared_ptr<VelodyneScan> scan) {
   // Since the velodyne delivers data at a very high rate, keep reading and
   // publishing scans as fast as possible.
+  // 接收npackets个数的原始数据包
   while ((config_.use_poll_sync() &&
           ((config_.is_main_frame() &&
             scan->firing_pkts_size() < config_.npackets()) ||
@@ -172,6 +196,11 @@ int VelodyneDriver::PollStandard(std::shared_ptr<VelodyneScan> scan) {
   return 0;
 }
 
+/**
+ * @brief positioning_thread_线程的入口函数
+ * @details 设置基本时间
+ * 
+ */
 void VelodyneDriver::PollPositioningPacket(void) {
   while (!cyber::IsShutdown()) {
     NMEATimePtr nmea_time(new NMEATime);
@@ -191,6 +220,7 @@ void VelodyneDriver::PollPositioningPacket(void) {
             << "day:" << nmea_time->day << "hour:" << nmea_time->hour
             << "min:" << nmea_time->min << "sec:" << nmea_time->sec;
     } else {
+      // 循环直到接收到有效的nmea协议时间
       while (!cyber::IsShutdown()) {
         int rc = positioning_input_->get_positioning_data_packet(nmea_time);
         if (rc == 0) {
@@ -202,6 +232,7 @@ void VelodyneDriver::PollPositioningPacket(void) {
       }
     }
 
+    // 一旦设置了basetime_这个线程为何还要继续运行
     if (basetime_ == 0 && ret) {
       SetBaseTimeFromNmeaTime(nmea_time, &basetime_);
     } else {
@@ -210,6 +241,11 @@ void VelodyneDriver::PollPositioningPacket(void) {
   }
 }
 
+/**
+ * @brief 更新last_gps_time_
+ * 
+ * @param current_time 
+ */
 void VelodyneDriver::UpdateGpsTopHour(uint32_t current_time) {
   if (last_gps_time_ == 0) {
     last_gps_time_ = current_time;
@@ -230,6 +266,15 @@ void VelodyneDriver::UpdateGpsTopHour(uint32_t current_time) {
   last_gps_time_ = current_time;
 }
 
+/**
+ * @brief Velodyne激光雷达驱动工厂
+ * @details 根据配置参数中model不同的型号，创建VelodyneDriver或Velodyne64Driver驱动对象
+ *          并为每一个型号设置不同的packet_rate_
+ * 
+ * @param node 节点
+ * @param config 配置文件中velodyne配置参数
+ * @return VelodyneDriver* 创建的Velodyne激光雷达驱动对象
+ */
 VelodyneDriver* VelodyneDriverFactory::CreateDriver(
     const std::shared_ptr<::apollo::cyber::Node>& node, const Config& config) {
   auto new_config = config;
@@ -286,6 +331,11 @@ VelodyneDriver* VelodyneDriverFactory::CreateDriver(
   return driver;
 }
 
+/**
+ * @brief poll_thread_线程的入口函数
+ * @details 根据UDP协议读取激光雷达原始数据，并进行发布
+ * 
+ */
 void VelodyneDriver::DevicePoll() {
   while (!apollo::cyber::IsShutdown()) {
     // poll device until end of file

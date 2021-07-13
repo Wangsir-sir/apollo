@@ -34,6 +34,10 @@ using apollo::cyber::Reader;
 using apollo::cyber::Writer;
 using apollo::drivers::velodyne::VelodyneScan;
 
+/**
+ * @brief Velodyne激光雷达驱动，会根据配置参数里的型号，创建对应两种不同的驱动对象
+ * 
+ */
 class VelodyneDriverComponent : public Component<> {
  public:
   ~VelodyneDriverComponent() {}

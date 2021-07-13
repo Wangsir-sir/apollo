@@ -23,6 +23,12 @@ namespace velodyne {
 using apollo::drivers::PointCloud;
 using apollo::drivers::velodyne::VelodyneScan;
 
+/**
+ * @brief 初始化Convert
+ * @details 根据参数创建对应的解析器，并初始化解析器
+ * 
+ * @param velodyne_config 
+ */
 void Convert::init(const Config& velodyne_config) {
   config_ = velodyne_config;
   // we use Beijing time by default

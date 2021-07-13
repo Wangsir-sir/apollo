@@ -34,6 +34,10 @@ using apollo::cyber::Writer;
 using apollo::cyber::base::CCObjectPool;
 using apollo::drivers::PointCloud;
 
+/**
+ * @brief 对点云进行运动补偿
+ * 
+ */
 class CompensatorComponent : public Component<PointCloud> {
  public:
   bool Init() override;

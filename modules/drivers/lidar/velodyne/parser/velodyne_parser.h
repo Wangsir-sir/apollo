@@ -227,17 +227,7 @@ class VelodyneParser {
   explicit VelodyneParser(const Config& config);
   virtual ~VelodyneParser() {}
 
-  /** \brief Set up for data processing.
-   *
-   *  Perform initializations needed before data processing can
-   *  begin:
-   *
-   *    - read device-specific angles calibration
-   *
-   *  @param private_nh private node handle for ROS parameters
-   *  @returns 0 if successful;
-   *           errno value for failure
-   */
+
   virtual void GeneratePointcloud(const std::shared_ptr<VelodyneScan>& scan_msg,
                                   std::shared_ptr<PointCloud> out_msg) = 0;
   virtual void setup();
@@ -372,6 +362,11 @@ class Velodyne128Parser : public VelodyneParser {
   uint64_t gps_base_usec_;  // full time
 };                          // class Velodyne128Parser
 
+/**
+ * @brief Velodyne激光雷达解析工厂
+ * @details 根据不同的型号创建不同的解析类，并设置calibration_online参数
+ * 
+ */
 class VelodyneParserFactory {
  public:
   static VelodyneParser* CreateParser(Config config);

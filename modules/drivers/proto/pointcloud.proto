@@ -11,6 +11,7 @@ message PointXYZIT {
   optional uint64 timestamp = 5 [default = 0];
 }
 
+// 激光点云
 message PointCloud {
   optional apollo.common.Header header = 1;
   optional string frame_id = 2;

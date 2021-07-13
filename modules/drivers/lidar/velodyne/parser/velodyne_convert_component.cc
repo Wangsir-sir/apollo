@@ -51,6 +51,14 @@ bool VelodyneConvertComponent::Init() {
   return true;
 }
 
+/**
+ * @brief 相关话题的回调函数
+ * @details 订阅激光雷达原始数据话题scan，获取原始数据，将其解析为点云数据并发布给点云话题
+ * 
+ * @param scan_msg 从相关话题订阅的原始数据
+ * @return true 解析并发布成功
+ * @return false 发布失败
+ */
 bool VelodyneConvertComponent::Proc(
     const std::shared_ptr<VelodyneScan>& scan_msg) {
   std::shared_ptr<PointCloud> point_cloud_out = point_cloud_pool_->GetObject();

@@ -54,6 +54,12 @@ uint64_t VelodyneParser::GetGpsStamp(double current_packet_stamp,
   return gps_stamp;
 }
 
+/**
+ * @brief 返回一个无效点
+ * 
+ * @param timestamp 该无效点的时间戳
+ * @return PointXYZIT 无效点
+ */
 PointXYZIT VelodyneParser::get_nan_point(uint64_t timestamp) {
   PointXYZIT nan_point;
   nan_point.set_timestamp(timestamp);
@@ -67,6 +73,12 @@ PointXYZIT VelodyneParser::get_nan_point(uint64_t timestamp) {
 VelodyneParser::VelodyneParser(const Config &config)
     : last_time_stamp_(0), config_(config), mode_(STRONGEST) {}
 
+/**
+ * @brief 设置配置信息中的min_angle和max_angle
+ * 
+ * @param view_direction 
+ * @param view_width 
+ */
 void VelodyneParser::init_angle_params(double view_direction,
                                        double view_width) {
   // converting angle parameters into the velodyne reference (rad)
@@ -88,8 +100,13 @@ void VelodyneParser::init_angle_params(double view_direction,
   }
 }
 
-/** Set up for on-line operation. */
+/**
+ * @brief 初始化
+ * @details 读取标定文件，设置相关变量
+ * 
+ */
 void VelodyneParser::setup() {
+  // 根据参数读取标定文件
   if (!config_.calibration_online()) {
     calibration_.read(config_.calibration_file());
 
@@ -105,6 +122,14 @@ void VelodyneParser::setup() {
                          ROTATION_RESOLUTION);
 }
 
+/**
+ * @brief 根据配置文件检查相关参数是否有效
+ * 
+ * @param rotation 
+ * @param range 距离
+ * @return true 
+ * @return false 
+ */
 bool VelodyneParser::is_scan_valid(int rotation, float range) {
   // check range first
   if (range < config_.min_range() || range > config_.max_range()) {

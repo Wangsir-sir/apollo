@@ -39,6 +39,10 @@ using apollo::cyber::base::CCObjectPool;
 using apollo::drivers::PointCloud;
 using apollo::drivers::velodyne::VelodyneScan;
 
+/**
+ * @brief 订阅激光雷达原始数据话题scan，获取原始数据，将其解析为点云数据并发布给点云话题
+ * 
+ */
 class VelodyneConvertComponent : public Component<VelodyneScan> {
  public:
   bool Init() override;

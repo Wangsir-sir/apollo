@@ -37,6 +37,7 @@ void Velodyne16Parser::GeneratePointcloud(
   gps_base_usec_ = scan_msg->basetime();
 
   size_t packets_size = scan_msg->firing_pkts_size();
+  // 遍历激光雷达原始数据中所有的数据包
   for (size_t i = 0; i < packets_size; ++i) {
     Unpack(scan_msg->firing_pkts(static_cast<int>(i)), out_msg);
     last_time_stamp_ = out_msg->measurement_time();
@@ -73,9 +74,12 @@ void Velodyne16Parser::Unpack(const VelodynePacket& pkt,
   int azimuth_corrected = 0;
 
   // const RawPacket* raw = (const RawPacket*)&pkt.data[0];
+  
+  // TODO:这个类型转换是怎么进行的？
   const RawPacket* raw = (const RawPacket*)pkt.data().c_str();
   double basetime = raw->gps_timestamp;  // usec
 
+  // 遍历RawPacket中所有的block
   for (int block = 0; block < BLOCKS_PER_PACKET; block++) {
     float azimuth = static_cast<float>(raw->blocks[block].rotation);
     if (block < (BLOCKS_PER_PACKET - 1)) {

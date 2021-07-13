@@ -20,6 +20,14 @@ namespace apollo {
 namespace drivers {
 namespace velodyne {
 
+/**
+ * @brief 从nmea协议中获取时间信息
+ * 
+ * @param nmea_time 传出参数，从nmea协议中获取的时间信息
+ * @param bytes 字节
+ * @return true 
+ * @return false 
+ */
 bool Input::exract_nmea_time_from_packet(NMEATimePtr nmea_time,
                                          const uint8_t* bytes) {
   unsigned int gprmc_index = 206;

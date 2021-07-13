@@ -53,6 +53,11 @@ SocketInput::SocketInput() : sockfd_(-1), port_(0) {}
 /** @brief destructor */
 SocketInput::~SocketInput(void) { (void)close(sockfd_); }
 
+/**
+ * @brief 初始化套接字，绑定端口号和地址，设置为非阻塞
+ * 
+ * @param port 端口号
+ */
 void SocketInput::init(const int &port) {
   if (sockfd_ != -1) {
     (void)close(sockfd_);
@@ -68,6 +73,7 @@ void SocketInput::init(const int &port) {
     return;
   }
 
+  // 填充地址信息
   sockaddr_in my_addr;                       // my address information
   memset(&my_addr, 0, sizeof(my_addr));      // initialize to zeros
   my_addr.sin_family = AF_INET;              // host byte order
@@ -75,12 +81,14 @@ void SocketInput::init(const int &port) {
   my_addr.sin_addr.s_addr = INADDR_ANY;      // automatically fill in my IP
   //    my_addr.sin_addr.s_addr = inet_addr("192.168.1.100");
 
+  // 地址与套接字绑定
   if (bind(sockfd_, reinterpret_cast<sockaddr *>(&my_addr), sizeof(sockaddr)) ==
       -1) {
     AERROR << "Socket bind failed! Port " << port_;
     return;
   }
 
+  // 设置非阻塞
   if (fcntl(sockfd_, F_SETFL, O_NONBLOCK | FASYNC) < 0) {
     AERROR << "non-block! Port " << port_;
     return;
@@ -89,16 +97,24 @@ void SocketInput::init(const int &port) {
   AINFO << "Velodyne socket fd is " << sockfd_ << ", port " << port_;
 }
 
-/** @brief Get one velodyne packet. */
+/** 
+ * @brief Get one velodyne packet.
+ * @param pkt 传出参数，表示通过UDP接收的激光雷达原始数据包
+ * 
+ * @return 0代表接收成功
+ */
 int SocketInput::get_firing_data_packet(VelodynePacket *pkt) {
   // double time1 = ros::Time::now().toSec();
   double time1 = apollo::cyber::Time().Now().ToSecond();
+  // 循环直到接收到完整的指定大小的数据
   while (true) {
+    // 检查在指定时间内是否有数据输入
     if (!input_available(POLL_TIMEOUT)) {
       return SOCKET_TIMEOUT;
     }
     // Receive packets that should now be available from the
     // socket using a blocking read.
+    // 通过UDP协议读取数据
     uint8_t bytes[FIRING_DATA_PACKET_SIZE];
     ssize_t nbytes =
         recvfrom(sockfd_, bytes, FIRING_DATA_PACKET_SIZE, 0, nullptr, nullptr);
@@ -110,8 +126,10 @@ int SocketInput::get_firing_data_packet(VelodynePacket *pkt) {
       }
     }
 
+    // 只有读取数据的字节数和指定的字节数相同时，才认为是有效
     if ((size_t)nbytes == FIRING_DATA_PACKET_SIZE) {
       // read successful, done now
+      // 这个set_data是什么意思？
       pkt->set_data(bytes, FIRING_DATA_PACKET_SIZE);
       break;
     }
@@ -119,14 +137,22 @@ int SocketInput::get_firing_data_packet(VelodynePacket *pkt) {
     AERROR << "Incomplete Velodyne rising data packet read: " << nbytes
            << " bytes from port " << port_;
   }
-  double time2 = apollo::cyber::Time().Now().ToSecond();
+  double time2 = apollo::cyber::Time().Now().ToSecond(); // 完整接收数据的时间点
+  // 时间戳设置为开始接收和完成接收数据的中间时刻
   pkt->set_stamp(apollo::cyber::Time((time2 + time1) / 2.0).ToNanosecond());
 
   return 0;
 }
 
+/**
+ * @brief 通过UDP协议读取数据，并解析为nmea协议的时间
+ * 
+ * @param nmea_time 传出参数，nmea时间
+ * @return int 0代表成功，1代表失败
+ */
 int SocketInput::get_positioning_data_packet(NMEATimePtr nmea_time) {
   while (true) {
+    // 检查在指定时间内是否有数据输入
     if (!input_available(POLL_TIMEOUT)) {
       return 1;
     }
@@ -160,6 +186,14 @@ int SocketInput::get_positioning_data_packet(NMEATimePtr nmea_time) {
   return 0;
 }
 
+/**
+ * @brief 阻塞等待一定时间，查看是否有数据输入
+ * @details 使用poll函数，查看套接字的读事件，若在指定的时间内有数据输入则返回ture
+ * 
+ * @param timeout 阻塞等待的时间
+ * @return true 存在数据输入
+ * @return false 不存在数据输入
+ */
 bool SocketInput::input_available(int timeout) {
   struct pollfd fds[1];
   fds[0].fd = sockfd_;
