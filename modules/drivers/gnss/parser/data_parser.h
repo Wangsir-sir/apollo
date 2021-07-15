@@ -42,6 +42,12 @@ namespace apollo {
 namespace drivers {
 namespace gnss {
 
+/**
+ * @brief 导航数据解析类
+ * @details 包含一个解析器，将设备读取的GPS原始数据解析为对应的消息类型，
+ *          然后发布至相应的话题
+ * 
+ */
 class DataParser {
  public:
   using MessagePtr = ::google::protobuf::Message *;
@@ -67,13 +73,13 @@ class DataParser {
       const std::shared_ptr<apollo::localization::Gps> &gps,
       apollo::transform::TransformStamped *transform);
 
-  bool init_flag_ = false;
+  bool init_flag_ = false; ///< 数据解析类初始化标志
   config::Config config_;
-  std::unique_ptr<Parser> data_parser_;
+  std::unique_ptr<Parser> data_parser_; ///< 解析器
   apollo::transform::TransformBroadcaster tf_broadcaster_;
 
-  GnssStatus gnss_status_;
-  InsStatus ins_status_;
+  GnssStatus gnss_status_; ///< 卫星导航状态
+  InsStatus ins_status_; ///< 惯性导航状态
   uint32_t ins_status_record_ = static_cast<uint32_t>(0);
   projPJ wgs84pj_source_;
   projPJ utm_target_;

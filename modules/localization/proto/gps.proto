@@ -5,6 +5,7 @@ package apollo.localization;
 import "modules/common/proto/header.proto";
 import "modules/localization/proto/pose.proto";
 
+// 使用ENU局部坐标系下的定位信息
 message Gps {
   optional apollo.common.Header header = 1;
 

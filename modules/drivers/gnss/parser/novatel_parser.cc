@@ -168,7 +168,7 @@ class NovatelParser : public Parser {
 
   size_t total_length_ = 0;
 
-  config::ImuType imu_type_ = config::ImuType::ADIS16488;
+  config::ImuType imu_type_ = config::ImuType::ADIS16488; ///< 惯性测量单元类型
 
   // -1 is an unused value.
   novatel::SolutionStatus solution_status_ =
@@ -182,20 +182,25 @@ class NovatelParser : public Parser {
 
   raw_t raw_;  // used for observation data
 
-  ::apollo::drivers::gnss::Gnss gnss_;
-  ::apollo::drivers::gnss::GnssBestPose bestpos_;
-  ::apollo::drivers::gnss::Imu imu_;
-  ::apollo::drivers::gnss::Ins ins_;
-  ::apollo::drivers::gnss::InsStat ins_stat_;
-  ::apollo::drivers::gnss::GnssEphemeris gnss_ephemeris_;
-  ::apollo::drivers::gnss::EpochObservation gnss_observation_;
-  ::apollo::drivers::gnss::Heading heading_;
+  ::apollo::drivers::gnss::Gnss gnss_; ///< 没有经过IMU数据融合的GNSS结果
+  ::apollo::drivers::gnss::GnssBestPose bestpos_; ///< GNSS定位消息
+  ::apollo::drivers::gnss::Imu imu_; ///< IMU数据
+  ::apollo::drivers::gnss::Ins ins_; ///< 融合了GNSS的INS结果
+  ::apollo::drivers::gnss::InsStat ins_stat_; ///< 
+  ::apollo::drivers::gnss::GnssEphemeris gnss_ephemeris_; ///< GNSS卫星位置表信息
+  ::apollo::drivers::gnss::EpochObservation gnss_observation_; ///< GPS一轮的收到的信息
+  ::apollo::drivers::gnss::Heading heading_; ///< 
 };
 
 Parser* Parser::CreateNovatel(const config::Config& config) {
   return new NovatelParser(config);
 }
 
+/**
+ * @brief Construct a new Novatel Parser:: Novatel Parser object
+ * @details 初始化位置、欧拉角、线速度协方差矩阵
+ * 
+ */
 NovatelParser::NovatelParser() {
   buffer_.reserve(BUFFER_SIZE);
   ins_.mutable_position_covariance()->Resize(9, FLOAT_NAN);
@@ -207,6 +212,12 @@ NovatelParser::NovatelParser() {
   }
 }
 
+/**
+ * @brief Construct a new Novatel Parser:: Novatel Parser object
+ * @details 初始化INS的位置、欧拉角、线速度协方差矩阵，以及惯性测量单元类型
+ * 
+ * @param config 
+ */
 NovatelParser::NovatelParser(const config::Config& config) {
   buffer_.reserve(BUFFER_SIZE);
   ins_.mutable_position_covariance()->Resize(9, FLOAT_NAN);
@@ -222,11 +233,18 @@ NovatelParser::NovatelParser(const config::Config& config) {
   }
 }
 
+/**
+ * @brief 根据两个数据指针指向的数据，解析为对应的组合导航消息
+ * 
+ * @param message_ptr 解析得到的组合导航消息
+ * @return Parser::MessageType 解析组合导航消息的类型
+ */
 Parser::MessageType NovatelParser::GetMessage(MessagePtr* message_ptr) {
   if (data_ == nullptr) {
     return MessageType::NONE;
   }
 
+  // 一个字节一个字节读取原始数据
   while (data_ < data_end_) {
     if (buffer_.empty()) {  // Looking for SYNC0
       if (*data_ == novatel::SYNC_0) {
@@ -253,9 +271,11 @@ Parser::MessageType NovatelParser::GetMessage(MessagePtr* message_ptr) {
           buffer_.clear();
       }
     } else if (header_length_ > 0) {  // Working on header.
+      // 缓冲区添加新的数据，直到满足首部的大小
       if (buffer_.size() < header_length_) {
         buffer_.push_back(*data_++);
       } else {
+        // 缓冲区添加完成对应大小的首部数据后，根据不同的首部获得总长度
         if (header_length_ == sizeof(novatel::LongHeader)) {
           total_length_ = header_length_ + novatel::CRC_LENGTH +
                           reinterpret_cast<novatel::LongHeader*>(buffer_.data())
@@ -272,10 +292,12 @@ Parser::MessageType NovatelParser::GetMessage(MessagePtr* message_ptr) {
         header_length_ = 0;
       }
     } else if (total_length_ > 0) {
+      // 缓冲区添加数据总长total_length_的字节
       if (buffer_.size() < total_length_) {  // Working on body.
         buffer_.push_back(*data_++);
         continue;
       }
+      // 从缓冲区解析对应的消息
       MessageType type = PrepareMessage(message_ptr);
       buffer_.clear();
       total_length_ = 0;
@@ -293,6 +315,12 @@ bool NovatelParser::check_crc() {
          *reinterpret_cast<uint32_t*>(buffer_.data() + l);
 }
 
+/**
+ * @brief 根据缓冲区中的字节数据，解析为不同的组合导航消息
+ * 
+ * @param message_ptr 解析后的组合导航消息
+ * @return Parser::MessageType 解析的组合导航消息类型
+ */
 Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
   if (!check_crc()) {
     AERROR << "CRC check failed.";
@@ -300,10 +328,11 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
   }
 
   uint8_t* message = nullptr;
-  novatel::MessageId message_id;
+  novatel::MessageId message_id; // 数据类型
   uint16_t message_length;
   uint16_t gps_week;
   uint32_t gps_millisecs;
+  // 根据不同类型的首部，获取缓冲区中不同种类的数据
   if (buffer_[2] == novatel::SYNC_2_LONG_HEADER) {
     auto header = reinterpret_cast<const novatel::LongHeader*>(buffer_.data());
     message = buffer_.data() + sizeof(novatel::LongHeader);
@@ -319,7 +348,9 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
     message_id = header->message_id;
     message_length = header->message_length;
   }
+  // 根据不同的message_id
   switch (message_id) {
+    // GNSS定位信息
     case novatel::BESTGNSSPOS:
       if (message_length != sizeof(novatel::BestPos)) {
         AERROR << "Incorrect message_length";
@@ -332,6 +363,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 没有经过IMU数据融合的GNSS消息的位置信息
     case novatel::BESTPOS:
     case novatel::PSRPOS:
       if (message_length != sizeof(novatel::BestPos)) {
@@ -345,6 +377,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 没有经过IMU数据融合的GNSS消息的速度信息
     case novatel::BESTGNSSVEL:
     case novatel::BESTVEL:
     case novatel::PSRVEL:
@@ -359,6 +392,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 融合了GNSS的惯性导航结果的线加速度、角速度、测量数据、首部信息
     case novatel::CORRIMUDATA:
     case novatel::CORRIMUDATAS:
     case novatel::IMURATECORRIMUS:
@@ -373,6 +407,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置融合了GNSS的惯性导航结果的位置、欧拉角、线速度协方差矩阵
     case novatel::INSCOV:
     case novatel::INSCOVS:
       if (message_length != sizeof(novatel::InsCov)) {
@@ -386,6 +421,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置融合了GNSS的惯性导航结果的位置、欧拉角、线速度、计算结果
     case novatel::INSPVA:
     case novatel::INSPVAS:
       if (message_length != sizeof(novatel::InsPva)) {
@@ -399,6 +435,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置IMU数据
     case novatel::RAWIMUX:
     case novatel::RAWIMUSX:
       if (message_length != sizeof(novatel::RawImuX)) {
@@ -412,6 +449,8 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置IMU数据
+    // TODO 和上面的有什么区别？
     case novatel::RAWIMU:
     case novatel::RAWIMUS:
       if (message_length != sizeof(novatel::RawImu)) {
@@ -431,6 +470,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
         break;
       }
 
+      // 
       if (HandleInsPvax(reinterpret_cast<novatel::InsPvaX*>(message), gps_week,
                         gps_millisecs)) {
         *message_ptr = &ins_stat_;
@@ -438,6 +478,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置GNSS卫星位置表信息的北斗开普勒信息
     case novatel::BDSEPHEMERIS:
       if (message_length != sizeof(novatel::BDS_Ephemeris)) {
         AERROR << "Incorrect BDSEPHEMERIS message_length";
@@ -449,6 +490,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置GNSS卫星位置表信息的GPS开普勒信息
     case novatel::GPSEPHEMERIS:
       if (message_length != sizeof(novatel::GPS_Ephemeris)) {
         AERROR << "Incorrect GPSEPHEMERIS message_length";
@@ -460,6 +502,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 设置GNSS卫星位置表信息的伽利略开普勒信息
     case novatel::GLOEPHEMERIS:
       if (message_length != sizeof(novatel::GLO_Ephemeris)) {
         AERROR << "Incorrect GLOEPHEMERIS message length";
@@ -471,6 +514,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // GPS一轮的收到的信息
     case novatel::RANGE:
       if (DecodeGnssObservation(buffer_.data(),
                                 buffer_.data() + buffer_.size())) {
@@ -479,6 +523,7 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
       }
       break;
 
+    // 
     case novatel::HEADING:
       if (message_length != sizeof(novatel::Heading)) {
         AERROR << "Incorrect message_length";
@@ -497,6 +542,15 @@ Parser::MessageType NovatelParser::PrepareMessage(MessagePtr* message_ptr) {
   return MessageType::NONE;
 }
 
+/**
+ * @brief 填充定位信息GnssBestPose消息
+ * 
+ * @param pos 读取得到的BestPos
+ * @param gps_week 
+ * @param gps_millisecs 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleGnssBestpos(const novatel::BestPos* pos,
                                       uint16_t gps_week,
                                       uint32_t gps_millisecs) {
@@ -530,6 +584,15 @@ bool NovatelParser::HandleGnssBestpos(const novatel::BestPos* pos,
   return true;
 }
 
+/**
+ * @brief 填充没有经过IMU数据融合的GNSS消息的位置信息
+ * 
+ * @param pos 
+ * @param gps_week 
+ * @param gps_millisecs 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleBestPos(const novatel::BestPos* pos,
                                   uint16_t gps_week, uint32_t gps_millisecs) {
   gnss_.mutable_position()->set_lon(pos->longitude);
@@ -611,6 +674,15 @@ bool NovatelParser::HandleBestPos(const novatel::BestPos* pos,
   return true;
 }
 
+/**
+ * @brief 填充没有经过IMU数据融合的GNSS消息的速度信息
+ * 
+ * @param vel 
+ * @param gps_week 
+ * @param gps_millisecs 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleBestVel(const novatel::BestVel* vel,
                                   uint16_t gps_week, uint32_t gps_millisecs) {
   if (velocity_type_ != vel->velocity_type) {
@@ -635,6 +707,13 @@ bool NovatelParser::HandleBestVel(const novatel::BestVel* vel,
   return true;
 }
 
+/**
+ * @brief 设置融合了GNSS的惯性导航结果的线加速度、角速度、测量数据、首部信息
+ * 
+ * @param imu 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleCorrImuData(const novatel::CorrImuData* imu) {
   rfu_to_flu(imu->x_velocity_change * imu_measurement_hz_,
              imu->y_velocity_change * imu_measurement_hz_,
@@ -655,6 +734,13 @@ bool NovatelParser::HandleCorrImuData(const novatel::CorrImuData* imu) {
   return true;
 }
 
+/**
+ * @brief 设置融合了GNSS的惯性导航结果的位置、欧拉角、线速度协方差矩阵
+ * 
+ * @param cov 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleInsCov(const novatel::InsCov* cov) {
   for (int i = 0; i < 9; ++i) {
     ins_.set_position_covariance(
@@ -668,6 +754,13 @@ bool NovatelParser::HandleInsCov(const novatel::InsCov* cov) {
   return false;
 }
 
+/**
+ * @brief 设置融合了GNSS的惯性导航结果的位置、欧拉角、线速度、计算结果
+ * 
+ * @param pva 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleInsPva(const novatel::InsPva* pva) {
   if (ins_status_ != pva->status) {
     ins_status_ = pva->status;
@@ -717,12 +810,20 @@ bool NovatelParser::HandleInsPvax(const novatel::InsPvaX* pvax,
   return true;
 }
 
+/**
+ * @brief 设置IMU数据
+ * 
+ * @param imu 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleRawImuX(const novatel::RawImuX* imu) {
   if (imu->imu_error != 0) {
     AWARN << "IMU error. Status: " << std::hex << std::showbase
           << imu->imuStatus;
   }
   if (is_zero(gyro_scale_)) {
+    // 根据从配置参数中读取的IMU类型计算IMU数据
     config::ImuType imu_type = imu_type_;
     novatel::ImuParameter param = novatel::GetImuParameter(imu_type);
     AINFO << "IMU type: " << config::ImuType_Name(imu_type) << "; "
@@ -840,6 +941,13 @@ bool NovatelParser::HandleRawImu(const novatel::RawImu* imu) {
   return true;
 }
 
+/**
+ * @brief 设置GNSS卫星位置表信息的GPS开普勒信息
+ * 
+ * @param gps_emph 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleGpsEph(const novatel::GPS_Ephemeris* gps_emph) {
   gnss_ephemeris_.set_gnss_type(apollo::drivers::gnss::GnssType::GPS_SYS);
 
@@ -879,6 +987,13 @@ bool NovatelParser::HandleGpsEph(const novatel::GPS_Ephemeris* gps_emph) {
   return true;
 }
 
+/**
+ * @brief 设置GNSS卫星位置表信息的北斗开普勒信息
+ * 
+ * @param bds_emph 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleBdsEph(const novatel::BDS_Ephemeris* bds_emph) {
   gnss_ephemeris_.set_gnss_type(apollo::drivers::gnss::GnssType::BDS_SYS);
 
@@ -918,6 +1033,13 @@ bool NovatelParser::HandleBdsEph(const novatel::BDS_Ephemeris* bds_emph) {
   return true;
 }
 
+/**
+ * @brief 设置GNSS卫星位置表信息的伽利略开普勒信息
+ * 
+ * @param glo_emph 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleGloEph(const novatel::GLO_Ephemeris* glo_emph) {
   gnss_ephemeris_.set_gnss_type(apollo::drivers::gnss::GnssType::GLO_SYS);
 
@@ -957,6 +1079,15 @@ bool NovatelParser::HandleGloEph(const novatel::GLO_Ephemeris* glo_emph) {
   return true;
 }
 
+/**
+ * @brief 
+ * 
+ * @param heading 
+ * @param gps_week 
+ * @param gps_millisecs 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::HandleHeading(const novatel::Heading* heading,
                                   uint16_t gps_week, uint32_t gps_millisecs) {
   heading_.set_solution_status(static_cast<uint32_t>(heading->solution_status));
@@ -989,6 +1120,14 @@ void NovatelParser::SetObservationTime() {
   gnss_observation_.set_gnss_second_s(second);
 }
 
+/**
+ * @brief 解析GPS一轮的收到的信息
+ * 
+ * @param obs_data 
+ * @param obs_data_end 
+ * @return true 
+ * @return false 
+ */
 bool NovatelParser::DecodeGnssObservation(const uint8_t* obs_data,
                                           const uint8_t* obs_data_end) {
   while (obs_data < obs_data_end) {

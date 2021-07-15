@@ -27,6 +27,7 @@ enum GnssTimeType {
 }
 
 // observation and ephemeris related system type
+// 分别代表GPS、北斗、伽利略、格洛纳斯定位系统
 enum GnssType {
   SYS_UNKNOWN = 0;
   GPS_SYS = 1;
@@ -69,6 +70,7 @@ message SatelliteObservation {
 }
 
 // This message defines one epoch observation on a certain time of a receiver
+// 一轮的观测结果
 message EpochObservation {
   // Unique id to a certain receiver
   // 0 for rover, otherwise for baser, supporting multi-baser mode
@@ -183,6 +185,7 @@ message GlonassOrbit {
 }
 
 // This message encapsulates keppler orbit message and glonass message
+// GNSS卫星位置表信息。有关开普勒轨道和格洛纳斯定位系统
 message GnssEphemeris {
   optional GnssType gnss_type = 1 [default = GLO_SYS];
   optional KepplerOrbit keppler_orbit = 2;

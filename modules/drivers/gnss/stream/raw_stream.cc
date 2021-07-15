@@ -52,6 +52,12 @@ void switch_stream_status(const apollo::drivers::gnss::Stream::Status &status,
       break;
   }
 }
+/**
+ * @brief 根据当前时间生成指定文件夹下的一个文件路径
+ * 
+ * @param gpsbin_folder GPS文件夹
+ * @return std::string GPS文件夹下的文件路径
+ */
 std::string getLocalTimeFileStr(const std::string &gpsbin_folder) {
   time_t it = std::time(0);
   char local_time_char[64];
@@ -68,7 +74,15 @@ std::string getLocalTimeFileStr(const std::string &gpsbin_folder) {
   return local_time_file_str;
 }
 
+/**
+ * @brief 流类对象的工厂方法
+ * 
+ * @param sd 流类对象
+ * @return Stream* 
+ */
 Stream *create_stream(const config::Stream &sd) {
+  // TODO 流对象的工厂方法
+  // _case()方法可返回oneof数据类型的变量kfoo
   switch (sd.type_case()) {
     case config::Stream::kSerial:
       if (!sd.serial().has_device()) {
@@ -80,6 +94,7 @@ Stream *create_stream(const config::Stream &sd) {
                << sd.serial().baud_rate();
         return nullptr;
       }
+      // FIXME 这个函数形参个数为3，为何实参个数为2？
       return Stream::create_serial(sd.serial().device().c_str(),
                                    sd.serial().baud_rate());
 
@@ -137,6 +152,13 @@ Stream *create_stream(const config::Stream &sd) {
   }
 }
 
+/**
+ * @brief Construct a new Raw Stream:: Raw Stream object
+ * @details 初始化导航数据解析器和RTK数据解析器
+ * 
+ * @param config 
+ * @param node 
+ */
 RawStream::RawStream(const config::Config &config,
                      const std::shared_ptr<apollo::cyber::Node> &node)
     : config_(config), node_(node) {
@@ -158,6 +180,14 @@ RawStream::~RawStream() {
   }
 }
 
+/**
+ * @brief 初始化驱动
+ * @details 初始化导航数据解析对象和RTK数据解析对象，并创建配置参数中各个设备流对象及相应的状态
+ *          连接所有设备流对象并登录，然后订阅底盘话题，订阅原始数据话题保存至文件中
+ * 
+ * @return true 
+ * @return false 
+ */
 bool RawStream::Init() {
   CHECK_NOTNULL(data_parser_ptr_);
   CHECK_NOTNULL(rtcm_parser_ptr_);
@@ -172,6 +202,7 @@ bool RawStream::Init() {
   stream_status_.set_ins_stream_type(StreamStatus::DISCONNECTED);
   stream_status_.set_rtk_stream_in_type(StreamStatus::DISCONNECTED);
   stream_status_.set_rtk_stream_out_type(StreamStatus::DISCONNECTED);
+  // /apollo/sensor/gnss/stream_status 发布流类对象状态信息
   stream_writer_ = node_->CreateWriter<StreamStatus>(FLAGS_stream_status_topic);
 
   common::util::FillHeader("gnss", &stream_status_);
@@ -183,6 +214,7 @@ bool RawStream::Init() {
     AINFO << "Error: Config file must provide the data stream.";
     return false;
   }
+  // 根据配置参数创建导航数据设备流对象
   s = create_stream(config_.data());
   if (s == nullptr) {
     AERROR << "Failed to create data stream.";
@@ -190,6 +222,7 @@ bool RawStream::Init() {
   }
   data_stream_.reset(s);
 
+  // 创建导航数据流对象状态
   Status *status = new Status();
   if (!status) {
     AERROR << "Failed to create data stream status.";
@@ -197,6 +230,7 @@ bool RawStream::Init() {
   }
   data_stream_status_.reset(status);
 
+  // 根据参数创建控制设备流对象，默认使用导航数据设备流对象
   if (config_.has_command()) {
     s = create_stream(config_.command());
     if (s == nullptr) {
@@ -216,6 +250,7 @@ bool RawStream::Init() {
     command_stream_status_ = data_stream_status_;
   }
 
+  // 根据参数创建RTK输入设备流对象
   if (config_.has_rtk_from()) {
     s = create_stream(config_.rtk_from());
     if (s == nullptr) {
@@ -228,6 +263,7 @@ bool RawStream::Init() {
       push_location_ = config_.rtk_from().push_location();
     }
 
+    // 创建RTK输入设备流对象状态
     status = new Status();
     if (!status) {
       AERROR << "Failed to create rtk_from stream status.";
@@ -235,6 +271,7 @@ bool RawStream::Init() {
     }
     in_rtk_stream_status_.reset(status);
 
+    // 创建RTK输出设备流对象
     if (config_.has_rtk_to()) {
       s = create_stream(config_.rtk_to());
       if (s == nullptr) {
@@ -243,6 +280,7 @@ bool RawStream::Init() {
       }
       out_rtk_stream_.reset(s);
 
+      // 创建RTK输出设备流对象状态
       status = new Status();
       if (!status) {
         AERROR << "Failed to create rtk_to stream status.";
@@ -271,6 +309,7 @@ bool RawStream::Init() {
   }
 
   // connect and login
+  // 所有设备流对象进行连接
   if (!Connect()) {
     AERROR << "gnss driver connect failed.";
     return false;
@@ -282,18 +321,24 @@ bool RawStream::Init() {
   }
 
   const std::string gpsbin_file = getLocalTimeFileStr(config_.gpsbin_folder());
+  // 以追加模式二进制模式写模式打开文件
   gpsbin_stream_.reset(new std::ofstream(
       gpsbin_file, std::ios::app | std::ios::out | std::ios::binary));
+  // /apollo/sensor/gnss/stream_status 各个设备流状态
   stream_writer_ = node_->CreateWriter<StreamStatus>(FLAGS_stream_status_topic);
+  // /apollo/sensor/gnss/raw_data 导航原始数据
   raw_writer_ = node_->CreateWriter<RawData>(FLAGS_gnss_raw_data_topic);
+  // /apollo/sensor/gnss/rtcm_data
   rtcm_writer_ = node_->CreateWriter<RawData>(FLAGS_rtcm_data_topic);
   cyber::ReaderConfig reader_config;
   reader_config.channel_name = FLAGS_gnss_raw_data_topic;
   reader_config.pending_queue_size = 100;
+  // 订阅/apollo/sensor/gnss/raw_data 话题，获取GPS原始数据，然后将其写入到相应文件中
   gpsbin_reader_ = node_->CreateReader<RawData>(
       reader_config, [&](const std::shared_ptr<RawData> &raw_data) {
         GpsbinCallback(raw_data);
       });
+  // 订阅/apollo/canbus/chassis 话题获取底盘反馈信息
   chassis_reader_ = node_->CreateReader<Chassis>(
       FLAGS_chassis_topic,
       [&](const std::shared_ptr<Chassis> &chassis) { chassis_ptr_ = chassis; });
@@ -301,6 +346,13 @@ bool RawStream::Init() {
   return true;
 }
 
+/**
+ * @brief 开启两个线程，根据参数开启定时调用函数
+ *        - 从导航设备流中读取数据，解析为对应的消息，发布至相应的话题
+ *        - 从RTK设备流中读取数据，解析为对应的消息，发布至相应的话题
+ *        - 定时从底盘接收车速信息，将其发布至控制设备流
+ * 
+ */
 void RawStream::Start() {
   data_thread_ptr_.reset(new std::thread(&RawStream::DataSpin, this));
   rtk_thread_ptr_.reset(new std::thread(&RawStream::RtkSpin, this));
@@ -311,6 +363,14 @@ void RawStream::Start() {
   }
 }
 
+/**
+ * @brief Timer对象定时调用的函数
+ * @details 从底盘接收车速，并将延迟和车速发送给控制设备流
+ *          - 格式：
+ *          WHEELVELOCITY latency_ms 100 0 0 0 0 0 speed_cmps\r\n"
+ *          
+ * 
+ */
 void RawStream::OnWheelVelocityTimer() {
   if (chassis_ptr_ == nullptr) {
     AINFO << "No chassis message received";
@@ -318,6 +378,7 @@ void RawStream::OnWheelVelocityTimer() {
   }
   auto latency_sec =
       cyber::Time::Now().ToSecond() - chassis_ptr_->header().timestamp_sec();
+  // 四舍五入到最接近并转换为长整数
   auto latency_ms = std::lround(latency_sec * 1000);
   auto speed_cmps = std::lround(chassis_ptr_->speed_mps() * 100);
   auto cmd_wheelvelocity = absl::StrCat("WHEELVELOCITY ", latency_ms,
@@ -326,6 +387,12 @@ void RawStream::OnWheelVelocityTimer() {
   command_stream_->write(cmd_wheelvelocity);
 }
 
+/**
+ * @brief 所有设备流对象进行连接
+ * 
+ * @return true 连接成功
+ * @return false 连接失败
+ */
 bool RawStream::Connect() {
   if (data_stream_) {
     if (data_stream_->get_status() != Stream::Status::CONNECTED) {
@@ -414,6 +481,12 @@ bool RawStream::Disconnect() {
   return true;
 }
 
+/**
+ * @brief 发送配置文件中的登录信息
+ * 
+ * @return true 
+ * @return false 
+ */
 bool RawStream::Login() {
   std::vector<std::string> login_data;
   for (const auto &login_command : config_.login_commands()) {
@@ -441,6 +514,10 @@ bool RawStream::Logout() {
   return true;
 }
 
+/**
+ * @brief 获取各个设备流对象的状态，并将其发布至相应的话题
+ * 
+ */
 void RawStream::StreamStatusCheck() {
   bool status_report = false;
   StreamStatus_Type report_stream_status;
@@ -475,10 +552,33 @@ void RawStream::StreamStatusCheck() {
   }
 }
 
+/**
+ * @brief data_thread_ptr_线程的入口函数
+ * @details 导航设备流对象不断从数据流设备读取GPS原始数据，将其发布至相关话题
+ *          - /apollo/sensor/gnss/raw_data 导航原始数据
+ *          导航数据解析对象对GPS原始数据进行解析,然后发布至相关话题
+ *          - /apollo/sensor/gnss/gnss_status 卫星导航状态
+ *          - /apollo/sensor/gnss/best_pose GNSS定位信息
+ *          - /apollo/sensor/gnss/imu IMU消息
+ *          - /apollo/sensor/gnss/ins_status 惯性导航状态
+ *          - /apollo/sensor/gnss/corrected_imu CorrectedImu
+ *          - /apollo/sensor/gnss/odometry 定位消息
+ *          - /apollo/sensor/gnss/ins_stat InsStat
+ *          - /apollo/sensor/gnss/rtk_eph GNSS卫星位置表信息
+ *          - /apollo/sensor/gnss/rtk_obs 一轮的观测结果
+ *          - /apollo/sensor/gnss/heading Heading
+ *          根据条件，从数据缓冲区当中提取$GPGGA语句，将其发送至RTK输入设备流
+ *          检查各个设备流的状态，发布至相关话题
+ *          - /apollo/sensor/gnss/stream_status 各个设备流状态
+ */
 void RawStream::DataSpin() {
+  // 发送当前设备流对象状态
   common::util::FillHeader("gnss", &stream_status_);
   stream_writer_->Write(stream_status_);
+  // 不断从数据流设备读取GPS原始数据，将其发布至相关话题
+  // 对GPS原始数据进行解析,然后发布至相关话题
   while (cyber::OK()) {
+    // 一次从设备流中读取BUFFER_SIZE字节数的数据
     size_t length = data_stream_->read(buffer_, BUFFER_SIZE);
     if (length > 0) {
       std::shared_ptr<RawData> msg_pub = std::make_shared<RawData>();
@@ -488,15 +588,27 @@ void RawStream::DataSpin() {
       }
       msg_pub->set_data(reinterpret_cast<const char *>(buffer_), length);
       raw_writer_->Write(msg_pub);
+      // 不断解析组合导航数据,并发布至相应的话题
       data_parser_ptr_->ParseRawData(msg_pub->data());
+      // 从数据缓冲区当中提取$GPGGA语句，将其发送至RTK输入设备流
       if (push_location_) {
         PushGpgga(length);
       }
     }
+    // 检查各个设备流的状态，发布至相关话题
     StreamStatusCheck();
   }
 }
 
+/**
+ * @brief rtk_thread_ptr_线程的入口函数
+ * @details 从RTK设备流中读取数据，并解析为相关的消息并发布至对应的话题
+ *          根据配置参数将RTK原始数据发送至RTK发送设备流
+ *          发布的话题：
+ *          - /apollo/sensor/gnss/rtk_eph 发布GNSS卫星位置表信息
+ *          - /apollo/sensor/gnss/rtk_obs 发布一轮观测信息
+ * 
+ */
 void RawStream::RtkSpin() {
   if (in_rtk_stream_ == nullptr) {
     return;
@@ -504,10 +616,12 @@ void RawStream::RtkSpin() {
   while (cyber::OK()) {
     size_t length = in_rtk_stream_->read(buffer_rtk_, BUFFER_SIZE);
     if (length > 0) {
+      // 从RTK设备流中读取数据，并解析为相关的消息并发布至对应的话题
       if (rtk_software_solution_) {
         PublishRtkData(length);
       } else {
         PublishRtkData(length);
+        // 将RTK原始数据发送至RTK发送设备流
         if (out_rtk_stream_ == nullptr) {
           continue;
         }
@@ -521,6 +635,12 @@ void RawStream::RtkSpin() {
   }
 }
 
+/**
+ * @brief 将RTK原始数据发布至相应话题
+ * @details 从RTK设备流中读取数据，并解析为相关的消息并发布至对应的话题
+ * 
+ * @param length 
+ */
 void RawStream::PublishRtkData(const size_t length) {
   std::shared_ptr<RawData> rtk_msg = std::make_shared<RawData>();
   CHECK_NOTNULL(rtk_msg);
@@ -529,11 +649,17 @@ void RawStream::PublishRtkData(const size_t length) {
   rtcm_parser_ptr_->ParseRtcmData(rtk_msg->data());
 }
 
+/**
+ * @brief 从数据缓冲区当中提取$GPGGA语句，将其发送至RTK输入设备流
+ * 
+ * @param length 
+ */
 void RawStream::PushGpgga(const size_t length) {
   if (!in_rtk_stream_) {
     return;
   }
 
+  // 在缓冲区数据中查找GPGGA首次出现的位置
   char *gpgga = strstr(reinterpret_cast<char *>(buffer_), "$GPGGA");
   if (gpgga) {
     char *p = strchr(gpgga, '*');

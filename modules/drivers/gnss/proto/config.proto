@@ -3,6 +3,7 @@ syntax = "proto2";
 package apollo.drivers.gnss.config;
 
 message Stream {
+  // 对应不同的解析器
   enum Format {
     UNKNOWN = 0;
     NMEA = 1;
@@ -43,6 +44,7 @@ message Stream {
     optional uint32 timeout_s = 6 [default = 30];
   }
 
+  // 流对象的类型
   oneof type {
     Serial serial = 2;
     Tcp tcp = 3;
@@ -60,6 +62,7 @@ message NovatelConfig {
 
 message UbloxConfig {}
 
+// 目前Apollo支持的惯性测量单元类型
 enum ImuType {
   // We currently use the following IMUs. We'll extend this list when a new IMU
   // is introduced.
@@ -102,6 +105,8 @@ message Config {
 
   repeated bytes logout_commands = 6;
 
+  // oneof类型与optional类似，但其中的变量共享内存，即同时只有会一个变量进行初始化，另一个变量的初始化会覆盖之前一个变量
+  // 当一系列变量同时至多一个进行初始化时，可以声明为oneof类型节省内存
   oneof device_config {
     NovatelConfig novatel_config = 7;
     UbloxConfig ublox_config = 8;

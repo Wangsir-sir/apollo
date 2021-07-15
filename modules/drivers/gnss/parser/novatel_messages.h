@@ -121,6 +121,7 @@ struct ShortHeader {
 };
 static_assert(sizeof(ShortHeader) == 12, "Incorrect size of ShortHeader");
 
+// TODO这些参数都是什么意思？
 enum class SolutionStatus : uint32_t {
   SOL_COMPUTED = 0,  // solution computed
   INSUFFICIENT_OBS,  // insufficient observations

@@ -11,6 +11,7 @@ package apollo.common;
 //   https://en.wikipedia.org/wiki/Universal_Transverse_Mercator_coordinate_system
 // The z field of PointENU can be omitted. If so, it is a 2D location and we do
 // not care its height.
+// 局部坐标系ENU下点的坐标
 message PointENU {
   optional double x = 1 [default = nan];  // East from the origin, in meters.
   optional double y = 2 [default = nan];  // North from the origin, in meters.
@@ -20,6 +21,7 @@ message PointENU {
 
 // A point in the global reference frame. Similar to PointENU, PointLLH allows
 // omitting the height field for representing a 2D location.
+// 大地坐标系下点的坐标
 message PointLLH {
   // Longitude in degrees, ranging from -180 to 180.
   optional double lon = 1 [default = nan];

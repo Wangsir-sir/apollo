@@ -4,6 +4,7 @@ package apollo.drivers.gnss;
 
 import "modules/common/proto/header.proto";
 
+// Stream类状态
 message StreamStatus {
   optional apollo.common.Header header = 1;
   enum Type {
@@ -16,6 +17,7 @@ message StreamStatus {
   optional Type rtk_stream_out_type = 4 [default = DISCONNECTED];
 }
 
+// 惯性导航状态
 message InsStatus {
   optional apollo.common.Header header = 1;
 
@@ -33,6 +35,7 @@ message InsStatus {
   optional Type type = 2 [default = INVALID];
 }
 
+// 卫星导航状态
 message GnssStatus {
   optional apollo.common.Header header = 1;
   optional bool solution_completed = 2 [default = false];

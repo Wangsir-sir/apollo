@@ -52,7 +52,16 @@ static const boost::array<double, 36> POSE_COVAR = {
     2, 0, 0, 0,    0, 0, 0, 2, 0, 0, 0,    0, 0, 0, 2, 0, 0, 0,
     0, 0, 0, 0.01, 0, 0, 0, 0, 0, 0, 0.01, 0, 0, 0, 0, 0, 0, 0.01};
 
+/**
+ * @brief 解析器的工厂类方法
+ * @details 根据配置参数中数据设备流的format参数创建对应的解析器
+ * 
+ * @param config 配置参数
+ * @param is_base_station 
+ * @return Parser* 解析器
+ */
 Parser *CreateParser(config::Config config, bool is_base_station = false) {
+  // TODO 解析器的工厂方法
   switch (config.data().format()) {
     case config::Stream::NOVATEL_BINARY:
       return Parser::CreateNovatel(config);
@@ -64,6 +73,13 @@ Parser *CreateParser(config::Config config, bool is_base_station = false) {
 
 }  // namespace
 
+/**
+ * @brief Construct a new Data Parser:: Data Parser object
+ * @details description
+ * 
+ * @param config 
+ * @param node 
+ */
 DataParser::DataParser(const config::Config &config,
                        const std::shared_ptr<apollo::cyber::Node> &node)
     : config_(config), tf_broadcaster_(node), node_(node) {
@@ -71,33 +87,53 @@ DataParser::DataParser(const config::Config &config,
 
   wgs84pj_source_ = pj_init_plus(WGS84_TEXT);
   utm_target_ = pj_init_plus(config_.proj4_text().c_str());
+  // 初始化卫星导航状态
   gnss_status_.set_solution_status(0);
   gnss_status_.set_num_sats(0);
   gnss_status_.set_position_type(0);
   gnss_status_.set_solution_completed(false);
+  // 初始化卫星导航状态
   ins_status_.set_type(InsStatus::INVALID);
 }
 
+/**
+ * @brief 初始化
+ * @details 初始化发布者话题，根据配置参数初始化解析器
+ * 
+ * @return true 
+ * @return false 
+ */
 bool DataParser::Init() {
   ins_status_.mutable_header()->set_timestamp_sec(
       cyber::Time::Now().ToSecond());
   gnss_status_.mutable_header()->set_timestamp_sec(
       cyber::Time::Now().ToSecond());
 
+  // /apollo/sensor/gnss/gnss_status 卫星导航状态
   gnssstatus_writer_ = node_->CreateWriter<GnssStatus>(FLAGS_gnss_status_topic);
+  // /apollo/sensor/gnss/ins_status 惯性导航状态
   insstatus_writer_ = node_->CreateWriter<InsStatus>(FLAGS_ins_status_topic);
+  // /apollo/sensor/gnss/best_pose 大地坐标系GNSS定位信息
   gnssbestpose_writer_ =
       node_->CreateWriter<GnssBestPose>(FLAGS_gnss_best_pose_topic);
+  // /apollo/sensor/gnss/corrected_imu ENU坐标系下的IMU消息
   corrimu_writer_ = node_->CreateWriter<CorrectedImu>(FLAGS_imu_topic);
+  // /apollo/sensor/gnss/ins_stat InsStat
   insstat_writer_ = node_->CreateWriter<InsStat>(FLAGS_ins_stat_topic);
+  // /apollo/sensor/gnss/rtk_eph GNSS卫星位置表信息
   gnssephemeris_writer_ =
       node_->CreateWriter<GnssEphemeris>(FLAGS_gnss_rtk_eph_topic);
+  // /apollo/sensor/gnss/rtk_obs 一轮的观测结果
   epochobservation_writer_ =
       node_->CreateWriter<EpochObservation>(FLAGS_gnss_rtk_obs_topic);
+  // /apollo/sensor/gnss/heading Heading
   heading_writer_ = node_->CreateWriter<Heading>(FLAGS_heading_topic);
+  // /apollo/sensor/gnss/imu ENU坐标系下的IMU消息
   rawimu_writer_ = node_->CreateWriter<Imu>(FLAGS_raw_imu_topic);
+  // /apollo/sensor/gnss/odometry ENU坐标系坐标系下的定位消息
   gps_writer_ = node_->CreateWriter<Gps>(FLAGS_gps_topic);
 
+  // 发布初始化后的卫星导航状态和惯性导航状态
   common::util::FillHeader("gnss", &ins_status_);
   insstatus_writer_->Write(ins_status_);
   common::util::FillHeader("gnss", &gnss_status_);
@@ -114,25 +150,40 @@ bool DataParser::Init() {
   return true;
 }
 
+/**
+ * @brief 解析GPS原始数据。
+ * @details 不断解析组合导航数据,并发布至相应的话题
+ * 
+ * @param msg 
+ */
 void DataParser::ParseRawData(const std::string &msg) {
   if (!init_flag_) {
     AERROR << "Data parser not init.";
     return;
   }
 
+  // 更新解析器要解析的数据
   data_parser_->Update(msg);
   Parser::MessageType type;
   MessagePtr msg_ptr;
 
+  // 不断解析组合导航数据,并发布至相应的话题
   while (cyber::OK()) {
+    // 将数据指针的内容解析为组合导航消息
     type = data_parser_->GetMessage(&msg_ptr);
     if (type == Parser::MessageType::NONE) {
       break;
     }
+    // 根据消息的类型,对消息进行对应的处理后,发布至相应的话题
     DispatchMessage(type, msg_ptr);
   }
 }
 
+/**
+ * @brief 根据融合了GNSS的惯性导航结果得到惯性导航状态，并发布至相关话题
+ * 
+ * @param ins 
+ */
 void DataParser::CheckInsStatus(::apollo::drivers::gnss::Ins *ins) {
   static double last_notify = cyber::Time().Now().ToSecond();
   double now = cyber::Time().Now().ToSecond();
@@ -160,6 +211,11 @@ void DataParser::CheckInsStatus(::apollo::drivers::gnss::Ins *ins) {
   }
 }
 
+/**
+ * @brief 根据没有经过IMU数据融合的GNSS结果，得到卫星导航状态，并发布至相关话题
+ * 
+ * @param gnss 
+ */
 void DataParser::CheckGnssStatus(::apollo::drivers::gnss::Gnss *gnss) {
   gnss_status_.set_solution_status(
       static_cast<uint32_t>(gnss->solution_status()));
@@ -175,40 +231,56 @@ void DataParser::CheckGnssStatus(::apollo::drivers::gnss::Gnss *gnss) {
   gnssstatus_writer_->Write(gnss_status_);
 }
 
+/**
+ * @brief 根据消息的类型,对消息进行对应的处理后,发布至相应的话题
+ * 
+ * @param type 
+ * @param message 
+ */
 void DataParser::DispatchMessage(Parser::MessageType type, MessagePtr message) {
   switch (type) {
+    // 根据没有经过IMU数据融合的GNSS结果，得到卫星导航状态，并发布至相关话题
     case Parser::MessageType::GNSS:
       CheckGnssStatus(As<::apollo::drivers::gnss::Gnss>(message));
       break;
 
+    // 将GNSS定位信息发布至相关话题
     case Parser::MessageType::BEST_GNSS_POS:
       PublishBestpos(message);
       break;
 
+    // 将IMU消息发布至相关话题
     case Parser::MessageType::IMU:
       PublishImu(message);
       break;
 
+    // 根据融合了GNSS的惯性导航结果得到融合了GNSS的惯性导航结果，并发布至相关话题
+    // 根据IMU消息，进行一定处理后填充CorrectedImu，并发布至相关话题
+    // 根据IMU消息进行一定的处理，填充GPS消息，并发布至相关话题
     case Parser::MessageType::INS:
       CheckInsStatus(As<::apollo::drivers::gnss::Ins>(message));
       PublishCorrimu(message);
       PublishOdometry(message);
       break;
 
+    // 将InsStat发布至相关话题
     case Parser::MessageType::INS_STAT:
       PublishInsStat(message);
       break;
 
+    // 将GNSS卫星位置表信息发布至相关话题
     case Parser::MessageType::BDSEPHEMERIDES:
     case Parser::MessageType::GPSEPHEMERIDES:
     case Parser::MessageType::GLOEPHEMERIDES:
       PublishEphemeris(message);
       break;
 
+    // 将一轮的观测结果发布至相关话题
     case Parser::MessageType::OBSERVATION:
       PublishObservation(message);
       break;
 
+    // 将Heading发布至相关话题
     case Parser::MessageType::HEADING:
       PublishHeading(message);
       break;
@@ -218,18 +290,34 @@ void DataParser::DispatchMessage(Parser::MessageType type, MessagePtr message) {
   }
 }
 
+/**
+ * @brief 将InsStat发布至相关话题
+ * 
+ * @param message 
+ */
 void DataParser::PublishInsStat(const MessagePtr message) {
   auto ins_stat = std::make_shared<InsStat>(*As<InsStat>(message));
   common::util::FillHeader("gnss", ins_stat.get());
   insstat_writer_->Write(ins_stat);
 }
 
+/**
+ * @brief 将GNSS定位信息发布至相关话题
+ * 
+ * @param message 
+ */
 void DataParser::PublishBestpos(const MessagePtr message) {
   auto bestpos = std::make_shared<GnssBestPose>(*As<GnssBestPose>(message));
   common::util::FillHeader("gnss", bestpos.get());
   gnssbestpose_writer_->Write(bestpos);
 }
 
+/**
+ * @brief 对融合了GNSS的惯性导航结果的x轴的数据取反后发布至相关话题
+ * @details 将线加速度和角速度FLU坐标系转换为ENU坐标系
+ * 
+ * @param message 
+ */
 void DataParser::PublishImu(const MessagePtr message) {
   auto raw_imu = std::make_shared<Imu>(*As<Imu>(message));
   Imu *imu = As<Imu>(message);
@@ -247,6 +335,12 @@ void DataParser::PublishImu(const MessagePtr message) {
   rawimu_writer_->Write(raw_imu);
 }
 
+/**
+ * @brief 对融合了GNSS的惯性导航结果进行一定的处理，填充GPS消息，并发布至相关话题
+ * @details 将大地坐标系转换为UTM下的局部坐标系ENU
+ * 
+ * @param message 
+ */
 void DataParser::PublishOdometry(const MessagePtr message) {
   Ins *ins = As<Ins>(message);
   auto gps = std::make_shared<Gps>();
@@ -255,7 +349,7 @@ void DataParser::PublishOdometry(const MessagePtr message) {
   gps->mutable_header()->set_timestamp_sec(unix_sec);
   auto *gps_msg = gps->mutable_localization();
 
-  // 1. pose xyz
+  // 1. pose xyz 将大地坐标系转换为UTM下的局部坐标系ENU
   double x = ins->position().lon();
   double y = ins->position().lat();
   x *= DEG_TO_RAD_LOCAL;
@@ -291,6 +385,12 @@ void DataParser::PublishOdometry(const MessagePtr message) {
   }
 }
 
+/**
+ * @brief 根据融合了GNSS的惯性导航结果，进行一定处理后填充CorrectedImu，并发布至相关话题
+ * @details 将加速度和线加速度从FLU坐标系转换为ENU坐标系
+ * 
+ * @param message 
+ */
 void DataParser::PublishCorrimu(const MessagePtr message) {
   Ins *ins = As<Ins>(message);
   auto imu = std::make_shared<CorrectedImu>();

@@ -7,6 +7,7 @@ import "modules/common/proto/geometry.proto";
 
 // Solution from a Global Navigation Satellite System (GNSS) receiver without
 // fused with any IMU.
+// 没有经过IMU数据融合的GNSS结果
 message Gnss {
   optional apollo.common.Header header = 1;
 

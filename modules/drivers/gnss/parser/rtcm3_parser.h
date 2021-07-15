@@ -56,8 +56,8 @@ class Rtcm3Parser : public Parser {
   rtcm_t rtcm_;
   bool is_base_station_ = false;
 
-  apollo::drivers::gnss::GnssEphemeris ephemeris_;
-  apollo::drivers::gnss::EpochObservation observation_;
+  apollo::drivers::gnss::GnssEphemeris ephemeris_; // GNSS天体位置表信息
+  apollo::drivers::gnss::EpochObservation observation_; // 一轮观测结果
 
   struct Point3D {
     double x;

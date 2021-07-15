@@ -50,7 +50,7 @@ class RtcmParser {
   std::shared_ptr<apollo::cyber::Writer<EpochObservation>>
       epochobservation_writer_ = nullptr;
   bool init_flag_ = false;
-  std::unique_ptr<Parser> rtcm_parser_ = nullptr;
+  std::unique_ptr<Parser> rtcm_parser_ = nullptr; ///< 解析器
 };
 
 }  // namespace gnss

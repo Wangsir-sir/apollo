@@ -59,6 +59,10 @@ speed_t get_serial_baudrate(uint32_t rate) {
   }
 }
 
+/**
+ * @brief 串口类对象
+ * 
+ */
 class SerialStream : public Stream {
  public:
   SerialStream(const char* device_name, speed_t baud_rate,
@@ -88,7 +92,7 @@ class SerialStream : public Stream {
   uint32_t byte_time_us_;
 
   uint32_t timeout_usec_;
-  int fd_;
+  int fd_; ///< 设备文件描述符
   int errno_;
   bool is_open_;
 };
@@ -112,6 +116,10 @@ SerialStream::SerialStream(const char* device_name, speed_t baud_rate,
 
 SerialStream::~SerialStream() { this->close(); }
 
+/**
+ * @brief 打开设备
+ * 
+ */
 void SerialStream::open(void) {
   int fd = 0;
   fd = ::open(device_name_.c_str(), O_RDWR | O_NOCTTY | O_NONBLOCK);
@@ -139,6 +147,13 @@ void SerialStream::open(void) {
   is_open_ = true;
 }
 
+/**
+ * @brief 配置设备
+ * 
+ * @param fd 设备文件描述符
+ * @return true 配置成功
+ * @return false 配置失败
+ */
 bool SerialStream::configure_port(int fd) {
   if (fd < 0) {
     return false;
@@ -219,6 +234,12 @@ bool SerialStream::configure_port(int fd) {
   return true;
 }
 
+/**
+ * @brief 连接设备。打开设备并登录
+ * 
+ * @return true 
+ * @return false 
+ */
 bool SerialStream::Connect() {
   if (!is_open_) {
     this->open();
@@ -273,6 +294,13 @@ void SerialStream::check_remove() {
   }
 }
 
+/**
+ * @brief 读取数据
+ * 
+ * @param buffer 传出参数，读取数据缓冲区
+ * @param max_length 最大的读取字节数
+ * @return size_t 成功读取的字节数
+ */
 size_t SerialStream::read(uint8_t* buffer, size_t max_length) {
   if (!is_open_) {
     if (!Connect()) {
@@ -330,6 +358,13 @@ size_t SerialStream::read(uint8_t* buffer, size_t max_length) {
   return bytes_read;
 }
 
+/**
+ * @brief 将数据进行发送
+ * 
+ * @param data 发送的数据
+ * @param length 发送数据的字节数
+ * @return size_t 发送成功的字节数
+ */
 size_t SerialStream::write(const uint8_t* data, size_t length) {
   if (!is_open_) {
     if (!Connect()) {
@@ -341,6 +376,7 @@ size_t SerialStream::write(const uint8_t* data, size_t length) {
   size_t total_nsent = 0;
   size_t delay_times = 0;
 
+  // 保证指定长度的数据成功发送
   while ((length > 0) && (delay_times < 5)) {
     ssize_t nsent = ::write(fd_, data, length);
     if (nsent < 0) {
@@ -427,6 +463,14 @@ bool SerialStream::wait_writable(uint32_t timeout_us) {
   return true;
 }
 
+/**
+ * @brief 创建串口对象
+ * 
+ * @param device_name 接口设备名称
+ * @param baud_rate 波特率
+ * @param timeout_usec 
+ * @return Stream* 
+ */
 Stream* Stream::create_serial(const char* device_name, uint32_t baud_rate,
                               uint32_t timeout_usec) {
   speed_t baud = get_serial_baudrate(baud_rate);

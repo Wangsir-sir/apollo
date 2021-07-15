@@ -4,6 +4,7 @@ package apollo.drivers.gnss;
 
 import "modules/common/proto/header.proto";
 
+// TODO此消息是什么含义？
 message Heading {
   optional apollo.common.Header header = 1;
   optional double measurement_time = 2;

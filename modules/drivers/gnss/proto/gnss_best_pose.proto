@@ -4,6 +4,7 @@ package apollo.drivers.gnss;
 
 import "modules/common/proto/header.proto";
 
+// TODO 此消息的含义？
 enum SolutionStatus {
   SOL_COMPUTED = 0;      // solution computed
   INSUFFICIENT_OBS = 1;  // insufficient observations
@@ -44,7 +45,7 @@ enum SolutionType {
   NARROW_FLOAT = 34;
   L1_INT = 48;
   WIDE_INT = 49;
-  NARROW_INT = 50;
+  NARROW_INT = 50; // 表示信号良好
   RTK_DIRECT_INS =
       51;  // RTK filter is directly initialized from the INS filter.
   INS_SBAS = 52;
@@ -68,6 +69,7 @@ enum DatumId {
   WGS84 = 61;
 }
 
+// GNSS定位信息
 message GnssBestPose {
   optional apollo.common.Header header = 1;
   optional double measurement_time = 2;  // In seconds.
@@ -77,7 +79,7 @@ message GnssBestPose {
   optional double longitude = 6;   // in degrees
   optional double height_msl = 7;  // height above mean sea level in meters
   optional float undulation = 8;   // undulation = height_wgs84 - height_msl
-  optional DatumId datum_id = 9;   // datum id number
+  optional DatumId datum_id = 9;   // datum id number 地心地固坐标系的种类
   optional float latitude_std_dev = 10;   // latitude standard deviation (m)
   optional float longitude_std_dev = 11;  // longitude standard deviation (m)
   optional float height_std_dev = 12;     // height standard deviation (m)

@@ -152,6 +152,12 @@ void Rtcm3Parser::SetObservationTime() {
   observation_.set_gnss_second_s(second);
 }
 
+/**
+ * @brief 解析数据
+ * 
+ * @param message_ptr 
+ * @return Parser::MessageType 
+ */
 Parser::MessageType Rtcm3Parser::GetMessage(MessagePtr *message_ptr) {
   if (data_ == nullptr) {
     return MessageType::NONE;
@@ -188,6 +194,12 @@ Parser::MessageType Rtcm3Parser::GetMessage(MessagePtr *message_ptr) {
   return MessageType::NONE;
 }
 
+/**
+ * @brief 解析为一轮的观测结果
+ * 
+ * @return true 
+ * @return false 
+ */
 bool Rtcm3Parser::ProcessObservation() {
   if (rtcm_.obs.n == 0) {
     AWARN << "Obs is zero.";
@@ -261,6 +273,12 @@ bool Rtcm3Parser::ProcessObservation() {
   return true;
 }
 
+/**
+ * @brief 解析为GNSS卫星位置表信息
+ * 
+ * @return true 
+ * @return false 
+ */
 bool Rtcm3Parser::ProcessEphemerides() {
   apollo::drivers::gnss::GnssType gnss_type;
 

@@ -48,6 +48,10 @@ inline T *As(::google::protobuf::Message *message_ptr) {
 
 // An abstract class of Parser.
 // One should use the create_xxx() functions to create a Parser object.
+/**
+ * @brief 解析器的接口，负责将原始数据解析为对应的消息类型
+ * 
+ */
 class Parser {
  public:
   // A general pointer to a protobuf message.
@@ -68,10 +72,16 @@ class Parser {
     data_end_ = data + length;
   }
 
+  /**
+   * @brief 更新解析器解析的数据
+   * 
+   * @param data 解析器要解析的数据
+   */
   void Update(const std::string &data) {
     Update(reinterpret_cast<const uint8_t *>(data.data()), data.size());
   }
 
+  // 解析的组合导航消息类型
   enum class MessageType {
     NONE,
     GNSS,

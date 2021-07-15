@@ -35,6 +35,12 @@ namespace apollo {
 namespace drivers {
 namespace gnss {
 
+/**
+ * @brief 原始流类，即组合导航的驱动
+ * @details 其包含各个流对象，从相关设备读取数据；
+ *          包含两个解析器，分别是导航数据和RTK数据解析器，解析读取的数据，然后将其发布
+ * 
+ */
 class RawStream {
  public:
   RawStream(const config::Config& config,
@@ -64,18 +70,18 @@ class RawStream {
   void OnWheelVelocityTimer();
 
   std::unique_ptr<cyber::Timer> wheel_velocity_timer_ = nullptr;
-  std::shared_ptr<apollo::canbus::Chassis> chassis_ptr_ = nullptr;
+  std::shared_ptr<apollo::canbus::Chassis> chassis_ptr_ = nullptr; ///< 从话题订阅的底盘反馈信息
   static constexpr size_t BUFFER_SIZE = 2048;
-  uint8_t buffer_[BUFFER_SIZE] = {0};
-  uint8_t buffer_rtk_[BUFFER_SIZE] = {0};
+  uint8_t buffer_[BUFFER_SIZE] = {0}; ///< 导航数据数据缓冲区
+  uint8_t buffer_rtk_[BUFFER_SIZE] = {0}; ///< RTK数据缓冲区
 
-  std::shared_ptr<Stream> data_stream_;
-  std::shared_ptr<Stream> command_stream_;
+  std::shared_ptr<Stream> data_stream_; ///< 输入设备流对象
+  std::shared_ptr<Stream> command_stream_; ///< 控制设备流对象
   std::shared_ptr<Stream> in_rtk_stream_;
   std::shared_ptr<Stream> out_rtk_stream_;
 
-  std::shared_ptr<Status> data_stream_status_;
-  std::shared_ptr<Status> command_stream_status_;
+  std::shared_ptr<Status> data_stream_status_;///< 数据流对象状态
+  std::shared_ptr<Status> command_stream_status_; ///< 输入设备流对象状态
   std::shared_ptr<Status> in_rtk_stream_status_;
   std::shared_ptr<Status> out_rtk_stream_status_;
 
@@ -87,11 +93,11 @@ class RawStream {
   const std::string raw_data_topic_;
   const std::string rtcm_data_topic_;
 
-  StreamStatus stream_status_;
+  StreamStatus stream_status_; // Stream类状态
   std::unique_ptr<std::thread> data_thread_ptr_;
   std::unique_ptr<std::thread> rtk_thread_ptr_;
-  std::unique_ptr<DataParser> data_parser_ptr_;
-  std::unique_ptr<RtcmParser> rtcm_parser_ptr_;
+  std::unique_ptr<DataParser> data_parser_ptr_; ///< 导航数据解析器
+  std::unique_ptr<RtcmParser> rtcm_parser_ptr_; ///< RTK数据解析器
   std::unique_ptr<std::thread> gpsbin_thread_ptr_;
   std::unique_ptr<std::ofstream> gpsbin_stream_ = nullptr;
 

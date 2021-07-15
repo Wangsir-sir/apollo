@@ -35,6 +35,13 @@ RtcmParser::RtcmParser(const config::Config& config,
                        const std::shared_ptr<apollo::cyber::Node>& node)
     : config_(config), node_(node) {}
 
+/**
+ * @brief 初始化
+ * @details 创建解析器，注册相应话题
+ * 
+ * @return true 
+ * @return false 
+ */
 bool RtcmParser::Init() {
   rtcm_parser_.reset(new Rtcm3Parser(true));
 
@@ -43,28 +50,39 @@ bool RtcmParser::Init() {
     return false;
   }
 
+  // /apollo/sensor/gnss/rtk_eph 发布GNSS天体位置表信息
   gnssephemeris_writer_ =
       node_->CreateWriter<GnssEphemeris>(FLAGS_gnss_rtk_eph_topic);
+  // /apollo/sensor/gnss/rtk_obs 发布GNSS观察信息
   epochobservation_writer_ =
       node_->CreateWriter<EpochObservation>(FLAGS_gnss_rtk_obs_topic);
   init_flag_ = true;
   return true;
 }
 
+/**
+ * @brief 解析RTK数据
+ * @details 根据RTK设备流中读取数据，并解析为相关的消息并发布至对应的话题
+ * 
+ * @param msg 
+ */
 void RtcmParser::ParseRtcmData(const std::string& msg) {
   if (!init_flag_) {
     return;
   }
 
+  // 更新待解析数据
   rtcm_parser_->Update(msg);
   Parser::MessageType type;
   MessagePtr msg_ptr;
 
+  // 根据RTK设备流中读取数据，并解析为相关的消息
   while (cyber::OK()) {
     type = rtcm_parser_->GetMessage(&msg_ptr);
     if (type == Parser::MessageType::NONE) {
       break;
     }
+    // 发布至对应的话题
     DispatchMessage(type, msg_ptr);
   }
 }

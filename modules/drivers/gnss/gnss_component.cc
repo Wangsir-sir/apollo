@@ -42,6 +42,9 @@ bool GnssDriverComponent::Init() {
     AERROR << "Init gnss stream failed";
     return false;
   }
+  // 从导航设备流中读取数据，解析为对应的消息，发布至相应的话题
+  // 从RTK设备流中读取数据，解析为对应的消息，发布至相应的话题
+  // 定时从底盘接收车速信息，将其发布至控制设备流
   raw_stream_->Start();
   monitor_logger_buffer_.INFO("gnss is started.");
   return true;

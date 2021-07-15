@@ -39,7 +39,7 @@ class GnssDriverComponent : public Component<> {
   bool Init() override;
 
  private:
-  std::unique_ptr<RawStream> raw_stream_ = nullptr;
+  std::unique_ptr<RawStream> raw_stream_ = nullptr; // 组合导航驱动类
   apollo::common::monitor::MonitorLogBuffer monitor_logger_buffer_;
 };
 

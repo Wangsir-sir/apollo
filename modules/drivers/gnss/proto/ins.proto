@@ -5,6 +5,7 @@ package apollo.drivers.gnss;
 import "modules/common/proto/header.proto";
 import "modules/common/proto/geometry.proto";
 
+// TODO这个消息是什么含义
 message InsStat {
   optional apollo.common.Header header = 1;
   optional uint32 ins_status = 2;
@@ -13,6 +14,11 @@ message InsStat {
 
 // Solution from an inertial navigation system (INS), which usually fuses GNSS
 // and IMU measurements.
+// 融合了GNSS的惯性导航结果，位置使用大地坐标系，线速度使用ENU坐标系，角速度线加速度使用FLU坐标系
+// InsStatus、CorrectedImu、Gps消息都是根据此消息的内容创建的
+// 分别对应/apollo/sensor/gnss/ins_status
+// /apollo/sensor/gnss/corrected_imu
+// /apollo/sensor/gnss/odometry
 message Ins {
   optional apollo.common.Header header = 1;
 
@@ -35,6 +41,7 @@ message Ins {
   optional Type type = 3;
 
   // Position of the IMU.
+  // 使用大地坐标系下点的坐标
   optional apollo.common.PointLLH position = 4;
 
   // Roll/pitch/yaw that represents a rotation of the intrinsic sequence z-y-x.
@@ -54,18 +61,18 @@ message Ins {
   //  9: then the elements are xx, xy, xz, yx, yy, yz, zx, zy, zz.
   // If the field size is not 3 or 9, treat the field invalid.
 
-  // 3-by-3 covariance matrix, in m^2.
+  // 3-by-3 covariance matrix, in m^2.位置协方差矩阵
   repeated float position_covariance = 9 [packed = true];
 
-  // 3-by-3 covariance matrix, in rad^2.
+  // 3-by-3 covariance matrix, in rad^2.欧拉角协方差矩阵
   repeated float euler_angles_covariance = 10 [packed = true];
 
-  // 3-by-3 covariance matrix, in m^2/s^2.
+  // 3-by-3 covariance matrix, in m^2/s^2.线速度协方差矩阵
   repeated float linear_velocity_covariance = 11 [packed = true];
 
-  // 3-by-3 covariance matrix, in rad^2/s^2.
+  // 3-by-3 covariance matrix, in rad^2/s^2.角速度协方差矩阵
   repeated float angular_velocity_covariance = 12 [packed = true];
 
-  // 3-by-3 covariance matrix, in m^2/s^4.
+  // 3-by-3 covariance matrix, in m^2/s^4.线加速度协方差矩阵
   repeated float linear_acceleration_covariance = 13 [packed = true];
 }

@@ -7,6 +7,7 @@ import "modules/common/proto/geometry.proto";
 
 // Measurements from an inertial measurement unit (IMU). The solution is with
 // respect to the IMU by default.
+// IMU数据，使用Forward/left/up坐标系
 message Imu {
   optional apollo.common.Header header = 1;
 
@@ -20,6 +21,7 @@ message Imu {
   //
   // When measurement_span is 0, angular_velocity and linear_acceleration are
   // instantaneous at measurement_time.
+  // 计算出measurement_span的参数由IMU的类型决定
   optional float measurement_span = 3 [default = 0.0];  // In seconds.
 
   // Forward/left/up in meters per square second.
