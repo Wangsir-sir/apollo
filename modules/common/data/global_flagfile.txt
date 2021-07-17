@@ -21,3 +21,13 @@
 --use_cyber_time=true
 
 --map_dir=/apollo/modules/map/data/CubeTown
+
+--map_dir=/apollo/modules/map/data/borregas_ave
+
+--map_dir=/apollo/modules/map/data/CubeTown
+--map_dir=/apollo/modules/map/data/test
+--map_dir=/apollo/modules/map/data/test
+--map_dir=/apollo/modules/map/data/test
+--map_dir=/apollo/modules/map/data/test
+
+--map_dir=/apollo/modules/map/data/test

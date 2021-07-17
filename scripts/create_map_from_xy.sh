@@ -17,6 +17,7 @@
 ###############################################################################
 
 APOLLO_ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source ${APOLLO_ROOT_DIR}/scripts/apollo_base.sh
 
 print_help() {
   echo "$0 --xy [--map_name MAP_NAME][--left_lane_num 0][--right_lane_num 0]"
@@ -87,8 +88,8 @@ generate_map() {
   fi
 
   mkdir -p ${dir_name}
-  python ${APOLLO_ROOT_DIR}/modules/tools/map_gen/map_gen_single_lane.py $xy_file $dir_name/base_map.txt 1.0
-  echo "--map_dir=${dir_name}" >> modules/common/data/global_flagfile.txt
+  ${APOLLO_BIN_PREFIX}/modules/tools/map_gen/map_gen_single_lane $xy_file $dir_name/base_map.txt 1.0
+  echo "--map_dir=${dir_name}" >> ${APOLLO_ROOT_DIR}/modules/common/data/global_flagfile.txt
   bash ${APOLLO_ROOT_DIR}/scripts/generate_routing_topo_graph.sh
   ${APOLLO_BIN_PREFIX}/modules/map/tools/sim_map_generator --map_dir=${dir_name} --output_dir=${dir_name}
 }
