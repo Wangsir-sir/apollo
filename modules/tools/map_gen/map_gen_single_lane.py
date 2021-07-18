@@ -92,11 +92,12 @@ def create_lane(map, id):
     return lane, central, left_boundary, right_boundary
 
 
+# 从csv路径文件中提取路径点
 fpath = sys.argv[1]
 f = open(fpath, 'r')
 points = []
 for line in f:
-    line = line.replace("\n", '')
+    line = line.replace("\n", '') # 将每行中的换行符去除
     data = line.split(',')
     x = float(data[0])
     y = float(data[1])

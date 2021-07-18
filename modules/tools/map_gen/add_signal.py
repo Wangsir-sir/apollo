@@ -30,21 +30,25 @@ if len(sys.argv) < 3:
 map_file = sys.argv[1]
 signal_file = sys.argv[2]
 
+# 从文件中读取地图消息
 with open(map_file, 'r') as fmap:
     map_data = fmap.read()
     map = map_pb2.Map()
     text_format.Parse(map_data, map)
 
+# 从文件中读取信号灯消息
 with open(signal_file, 'r') as fsignal:
     signal_data = fsignal.read()
     signal = map_signal_pb2.Signal()
     text_format.Parse(signal_data, signal)
 
-lanes = {}
-lanes_map = {}
+lanes = {} # 地图中ID号和车道中心线LineString组成的字典
+lanes_map = {} # 地图中ID号和车道组成的字典
+# 遍历地图中每条车道，获得上面两个字典
 for lane in map.lane:
     lane_points = []
     lanes_map[lane.id.id] = lane
+    # 遍历车道中心线的每一段
     for segment in lane.central_curve.segment:
         for point in segment.line_segment.point:
             lane_points.append((point.x, point.y))
@@ -52,13 +56,16 @@ for lane in map.lane:
     lanes[lane.id.id] = lane_string
 
 lines = {}
+# 添加车道和信号灯停止线直接的重叠关系
 for stop_line in signal.stop_line:
+    # 遍历停止线，获取所有点，组成LineString对象
     stop_line_points = []
     for segment in stop_line.segment:
         for point in segment.line_segment.point:
             stop_line_points.append((point.x, point.y))
     stop_line_string = LineString(stop_line_points)
     for lane_id, lane_string in lanes.items():
+        # 找到车道中心线和该信号灯停止线的交点，填充重叠信息
         p = stop_line_string.intersection(lane_string)
         if type(p) == Point:
             s = lane_string.project(p)
@@ -78,5 +85,5 @@ for stop_line in signal.stop_line:
             lanes_map[lane_id].overlap_id.add().id = overlap.id.id
 map.signal.add().CopyFrom(signal)
 
-with open(map_file + "_" + fsignal_file, 'w') as fmap:
+with open(map_file + "_" + signal_file, 'w') as fmap:
     fmap.write(str(map))

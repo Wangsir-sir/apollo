@@ -17,6 +17,7 @@
 ###############################################################################
 
 APOLLO_ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source ${APOLLO_ROOT_DIR}/scripts/apollo_base.sh
 
 print_help() {
   echo "$0 --xy [--map_name MAP_NAME][--left_lane_num 0][--right_lane_num 0]"
@@ -33,6 +34,7 @@ g_xy_file=""
 #right_lane_num="0"
 while [[ $# -gt 0 ]]; do
   key="$1"
+  echo $1
   case $key in
     -d | --dir)
       target_dir="$2"
@@ -40,7 +42,14 @@ while [[ $# -gt 0 ]]; do
       shift # past value
       ;;
     --xy)
+      echo $2
       g_xy_file="$2"
+      shift # past argument
+      shift # past value
+      ;;
+    --map_name)
+      echo $2
+      map_name="$2"
       shift # past argument
       shift # past value
       ;;
@@ -75,10 +84,11 @@ if [ "$map_name" == "" ]; then
   map_name=$(basename $g_xy_file)
   map_name="${map_name%.*}"
 fi
-
+echo $g_xy_file
+echo $map_name
 generate_map() {
   xy_file=$1
-  dir_name="${APOLLO_ROOT_DIR}/modules/map/data/$2"
+  dir_name="/apollo/modules/map/data/$2"
   #left_num=$3
   #right_num=$4
   if [ -d ${dir_name} ]; then
@@ -87,10 +97,10 @@ generate_map() {
   fi
 
   mkdir -p ${dir_name}
-  python ${APOLLO_ROOT_DIR}/modules/tools/map_gen/map_gen_single_lane.py $xy_file $dir_name/base_map.txt 1.0
-  echo "--map_dir=${dir_name}" >> modules/common/data/global_flagfile.txt
-  bash ${APOLLO_ROOT_DIR}/scripts/generate_routing_topo_graph.sh
-  ${APOLLO_BIN_PREFIX}/modules/map/tools/sim_map_generator --map_dir=${dir_name} --output_dir=${dir_name}
+  /apollo/bazel-bin/modules/tools/map_gen/map_gen_single_lane $xy_file $dir_name/base_map.txt 1.0
+  echo "--map_dir=${dir_name}" >> /apollo/modules/common/data/global_flagfile.txt
+  bash /apollo/scripts/generate_routing_topo_graph.sh
+  /apollo/bazel-bin/modules/map/tools/sim_map_generator --map_dir=${dir_name} --output_dir=${dir_name}
 }
 
 generate_map $g_xy_file $map_name $left_lane_num $right_lane_num
