@@ -15,9 +15,10 @@ enum OutputType {
 }
 
 message Config {
-  optional string camera_dev = 1;
+  optional string camera_dev = 1; // 摄像头设备名称
   optional string frame_id = 2;
-  // v4l pixel format
+  // v4l pixel format 视频的颜色编码格式
+  // // must be yuyv | uyvy | mjpeg | yuvmono10 | rgb24
   optional string pixel_format = 3 [default = "yuyv"];
   // mmap, userptr, read
   optional IOMethod io_method = 4;
@@ -41,15 +42,16 @@ message Config {
   optional uint32 bytes_per_pixel = 20 [default = 3];
   optional uint32 trigger_internal = 21 [default = 0];
   optional uint32 trigger_fps = 22 [default = 30];
-  optional string channel_name = 23;
+  optional string channel_name = 23; ///< 原始图像发布的话题
   // wait time when camera select timeout
   optional uint32 device_wait_ms = 24 [default = 2000];
   // camera select spin time
   optional uint32 spin_rate = 25 [default = 200];
+  // YUYV or RGB
   optional OutputType output_type = 26;
 
   message CompressConfig {
-    optional string output_channel = 1;
+    optional string output_channel = 1;///< 压缩图像发布的话题
     optional uint32 image_pool_size = 2 [default = 20];
   }
   optional CompressConfig compress_conf = 27;

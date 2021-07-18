@@ -150,9 +150,9 @@ class UsbCam {
   void reconnect();
   void reset_device();
 
-  std::shared_ptr<Config> config_;
-  int pixel_format_;
-  int fd_;
+  std::shared_ptr<Config> config_; // 配置参数
+  int pixel_format_; ///< 颜色编码格式
+  int fd_; ///< 设备文件描述符
   buffer* buffers_;
   unsigned int n_buffers_;
   bool is_capturing_;

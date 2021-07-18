@@ -35,6 +35,10 @@ using apollo::cyber::Writer;
 using apollo::cyber::base::CCObjectPool;
 using apollo::drivers::video::config::CameraH265Config;
 
+/**
+ * @brief 根据UDP协议从指定端口接收视频数据，将其发布至相关话题
+ * 
+ */
 class CompCameraH265Compressed : public Component<> {
  public:
   ~CompCameraH265Compressed() {

@@ -70,6 +70,7 @@ UsbCam::~UsbCam() {
 bool UsbCam::init(const std::shared_ptr<Config>& cameraconfig) {
   config_ = cameraconfig;
 
+  // 根据配置参数设置颜色编码格式
   if (config_->pixel_format() == "yuyv") {
     pixel_format_ = V4L2_PIX_FMT_YUYV;
   } else if (config_->pixel_format() == "uyvy") {

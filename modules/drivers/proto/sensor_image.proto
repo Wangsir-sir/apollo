@@ -63,6 +63,7 @@ enum PixelFormat {
   YUV422 = 4001;
 }
 
+// 原始图像
 message Image {
   optional apollo.common.Header header = 1;
   optional string frame_id = 2;
@@ -71,11 +72,13 @@ message Image {
   optional uint32 height = 4;  // image height, that is, number of rows
   optional uint32 width = 5;   // image width, that is, number of columns
 
+  // yuyv or rgb8
   optional string encoding = 6;
   optional uint32 step = 7;  // Full row length in bytes
   optional bytes data = 8;   // actual matrix data, size is (step * rows)
 }
 
+// 压缩图像
 message CompressedImage {
   optional apollo.common.Header header = 1;
   optional string frame_id = 2;

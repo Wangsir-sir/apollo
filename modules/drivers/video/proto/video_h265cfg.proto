@@ -9,7 +9,7 @@ message CameraH265Config {
   required string pixel_format = 3 [default = "yuyv"];
   // mmap, userptr, read
   // required IOMethod io_method = 4;
-  required uint32 record = 4;
+  required uint32 record = 4; // 是否将接收的视频保存为文件
   required uint32 width = 5;
   required uint32 height = 6;
   required uint32 frame_rate = 7;
@@ -32,7 +32,7 @@ message CameraH265Config {
   required int32 camera_seq_number = 24 [default = -1];
 
   message CompressConfig {
-    optional string output_channel = 1;
+    optional string output_channel = 1; // 输出的话题
     optional uint32 image_pool_size = 2 [default = 20];
   }
   optional CompressConfig compress_conf = 25;

@@ -58,6 +58,7 @@ bool CameraComponent::Init() {
     return false;
   }
 
+  // 初始化缓存
   for (int i = 0; i < buffer_size_; ++i) {
     auto pb_image = std::make_shared<Image>();
     pb_image->mutable_header()->set_frame_id(camera_config_->frame_id());
@@ -81,6 +82,10 @@ bool CameraComponent::Init() {
   return true;
 }
 
+/**
+ * @brief 从设备中读取图像，将其发布至相应话题
+ * 
+ */
 void CameraComponent::run() {
   running_.exchange(true);
   while (!cyber::IsShutdown()) {

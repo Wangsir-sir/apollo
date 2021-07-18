@@ -40,7 +40,7 @@ class CameraDriver {
   int Record() { return config_.record(); }
 
  protected:
-  CameraH265Config config_;
+  CameraH265Config config_; ///< 配置参数
   std::shared_ptr<SocketInput> input_;
   bool PollByFrame(std::shared_ptr<CompressedImage> h265);
 };

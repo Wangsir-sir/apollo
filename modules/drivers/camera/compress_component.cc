@@ -47,6 +47,13 @@ bool CompressComponent::Init() {
   return true;
 }
 
+/**
+ * @brief 原始图像话题的回调函数。对原始图像进行压缩处理
+ * 
+ * @param image 
+ * @return true 
+ * @return false 
+ */
 bool CompressComponent::Proc(const std::shared_ptr<Image>& image) {
   ADEBUG << "procing compressed";
   auto compressed_image = image_pool_->GetObject();
@@ -60,6 +67,7 @@ bool CompressComponent::Proc(const std::shared_ptr<Image>& image) {
   params[0] = cv::IMWRITE_JPEG_QUALITY;
   params[1] = 95;
 
+  // 对原始图像进行压缩处理
   try {
     cv::Mat mat_image(image->height(), image->width(), CV_8UC3,
                       const_cast<char*>(image->data().data()), image->step());
