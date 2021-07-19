@@ -117,7 +117,6 @@ function get_records() {
     if [[ -f "${file}" ]]; then
       if [[ "${file}" == *"record"* ]]; then
         echo -e '  record_path: "'$(readlink -f ${file})'"\n' >>"${tmp_file}"
-        sed -i "/# records can be specified as a list/r ${tmp_file}" "${TARGET_DIR}/${TASK}.config"
       else
         echo "The input file ${file} is not a record!"
         exit 1
@@ -127,6 +126,7 @@ function get_records() {
       exit 1
     fi
   done
+  sed -i "/# records can be specified as a list/r ${tmp_file}" "${TARGET_DIR}/${TASK}.config"
   rm -f ${tmp_file}
 
   for dir in "${RECORD_DIRS[@]}"; do
