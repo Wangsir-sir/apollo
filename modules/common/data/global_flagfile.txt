@@ -60,3 +60,7 @@
 --map_dir=/apollo/modules/map/data/test_mapGenSingal
 
 --map_dir=/apollo/modules/map/data/CubeTown
+
+--map_dir=/apollo/modules/map/data/borregas_ave
+
+--map_dir=/apollo/modules/map/data/CubeTown

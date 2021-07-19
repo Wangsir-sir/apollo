@@ -18,12 +18,12 @@
 
 TOP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
-TARGET_DIR="${TOP_DIR}/output/sensor_calibration"
-TEMPLATE_DIR="${TOP_DIR}/docs/Apollo_Fuel/examples/sensor_calibration"
+TARGET_DIR="${TOP_DIR}/output/sensor_calibration" # 生成的预处理文件保存路径
+TEMPLATE_DIR="${TOP_DIR}/docs/Apollo_Fuel/examples/sensor_calibration" # 配置参数文件路径
 DEFAULT_RECORD_DIR="${TOP_DIR}/data/bag"
 
-TASK=""
-VALID_TASKS=("lidar_to_gnss" "camera_to_lidar")
+TASK="" # 当前脚本要执行的任务，lidar_to_gnss or camera_to_lidar
+VALID_TASKS=("lidar_to_gnss" "camera_to_lidar") # 任务列表
 
 RECORD_FILES=()
 RECORD_DIRS=()
@@ -114,10 +114,11 @@ function get_records() {
   local tmp_file="${TARGET_DIR}/tmp.txt"
 
   for file in "${RECORD_FILES[@]}"; do
+  # echo $file
     if [[ -f "${file}" ]]; then
       if [[ "${file}" == *"record"* ]]; then
         echo -e '  record_path: "'$(readlink -f ${file})'"\n' >>"${tmp_file}"
-        sed -i "/# records can be specified as a list/r ${tmp_file}" "${TARGET_DIR}/${TASK}.config"
+        # TODO 为什么会重复添加配置文件路径？是BUG还是故意为之？
       else
         echo "The input file ${file} is not a record!"
         exit 1
@@ -127,6 +128,8 @@ function get_records() {
       exit 1
     fi
   done
+  cat $tmp_file
+  sed -i "/# records can be specified as a list/r ${tmp_file}" "${TARGET_DIR}/${TASK}.config"
   rm -f ${tmp_file}
 
   for dir in "${RECORD_DIRS[@]}"; do
@@ -160,6 +163,7 @@ function install_if_not_exist() {
   done
 }
 
+# 读取录制文件里的激光雷达相关的话题，将其进行一定处理后生成配置文件lidar_to_gnss.config
 function update_lidar_config() {
   local record
   local lidar_channels
@@ -171,6 +175,8 @@ function update_lidar_config() {
   else
     record="$(readlink -f ${RECORD_DIRS[0]})/$(ls ${RECORD_DIRS[0]} | grep -m1 record)"
   fi
+  # awk '{print $1}'按行输出文本，只输出第一列的内容
+  # grep "" 提取包含""的行，grep -v "" 排除包含"“的行
   lidar_channels=($(cyber_recorder info ${record} | awk '{print $1}' |
     grep "PointCloud2" | grep -v "fusion" | grep -v "compensator"))
 

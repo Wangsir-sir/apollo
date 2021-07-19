@@ -670,7 +670,7 @@ def main(argv):
     output_abs_path = extractor.reorganize_extracted_data(
         tmp_data_path=output_tmp_path, remove_input_data_cache=True)
 
-    print('Data extraction is completed successfully!')
+    print('\nData extraction is completed successfully!\n')
     extractor.sanity_check_path(output_abs_path)
     cyber.shutdown()
     sys.exit(0)

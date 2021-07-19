@@ -32,7 +32,7 @@ from cyber.python.cyber_py3 import cyber
 from modules.dreamview.proto import preprocess_table_pb2
 from modules.tools.vehicle_calibration.sanity_check import sanity_check
 
-flags.DEFINE_string('vehicle_type', '', 'The vehicle type to be calibrated')
+flags.DEFINE_string('vehicle_type', 'Lincoln2017MKZ_LGSVL', 'The vehicle type to be calibrated')
 flags.DEFINE_string('data_path', '/apollo/output', 'Default output data path')
 flags.DEFINE_string('calibration_data_path',
                     '/apollo/modules/calibration/data',
@@ -142,6 +142,8 @@ class Preprocessor(object):
             os.path.join(task_dir, self.vehicle_type))
         records_dir = self.create_if_not_exists(
             os.path.join(vehicle_dir, "Records"))
+        print(self.config_file)
+        print(self.vehicle_type)
         shutil.copy(self.config_file, vehicle_dir)
         records_info = self.get_records_info()
         finished_records = 0

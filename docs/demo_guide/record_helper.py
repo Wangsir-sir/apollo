@@ -24,7 +24,7 @@ import sys
 import argparse
 import subprocess
 
-DOWNLOAD_LINK_PREFIX = "https://github.com/ApolloAuto/apollo/releases/download"
+DOWNLOAD_LINK_PREFIX = "https://hub.fastgit.org/ApolloAuto/apollo/releases/download"
 
 URL_LISTING = [
     "v1.0.0/demo_1.0.bag",
