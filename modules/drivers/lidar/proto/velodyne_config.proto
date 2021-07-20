@@ -21,8 +21,8 @@ message Config {
   optional double min_angle = 13; // 
   optional double view_direction = 14; // 
   optional double view_width = 15; // 
-  optional bool calibration_online = 16; // 
-  optional string calibration_file = 17; // 标定文件路径
+  optional bool calibration_online = 16; // 是否在点云转换过程中在线校准
+  optional string calibration_file = 17; // 校准文件路径
   optional bool organized = 18;
   optional string convert_channel_name = 19; // 发布点云的话题
   optional int32 npackets = 20;

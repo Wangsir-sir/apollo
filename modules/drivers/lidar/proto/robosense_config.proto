@@ -16,6 +16,6 @@ message Config {
   optional uint32 cut_angle = 12;
   optional string pointcloud_channel = 13;
   optional string scan_channel = 14;
-  optional string calibration_file=15;
+  optional string calibration_file=15; // 在线校准的文件
   optional bool use_lidar_clock = 16;
 }

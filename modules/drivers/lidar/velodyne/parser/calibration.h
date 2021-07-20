@@ -67,7 +67,7 @@ struct LaserCorrection {
 /** \brief Calibration class storing entire configuration for the Velodyne */
 class Calibration {
  public:
-  std::map<int, LaserCorrection> laser_corrections_;
+  std::map<int, LaserCorrection> laser_corrections_; ///< 保存YAML标定配置文件当中所有数据的容器
   int num_lasers_;
   bool initialized_;
 

@@ -206,6 +206,7 @@ function update_camera_config() {
   else
     record="$(readlink -f ${RECORD_DIRS[0]})/$(ls ${RECORD_DIRS[0]} | grep -m1 record)"
   fi
+  # awk '$2>0{print $1}'代表有消息输出的话题
   camera_channels=($(cyber_recorder info ${record} | grep "image" | grep -v "compressed" | awk '$2>0{print $1}'))
   if [ "${#camera_channels[*]}" -ne 1 ]; then
     echo "There should be only one camera channel in ${record}, please check your record!"
@@ -233,6 +234,7 @@ function main() {
   set -e
 
   local extract_data_bin="${TOP_DIR}/bazel-bin/modules/tools/sensor_calibration/extract_data"
+  echo "${TARGET_DIR}/${TASK}.config"
   if [[ -f "${extract_data_bin}" ]]; then
     "${extract_data_bin}" --config "${TARGET_DIR}/${TASK}.config"
   else

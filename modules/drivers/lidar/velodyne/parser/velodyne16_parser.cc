@@ -62,6 +62,8 @@ uint64_t Velodyne16Parser::GetTimestamp(double base_time, float time_offset,
 }
 
 /** @brief convert raw packet to point cloud
+ * @details 在将激光雷达原始数据进行转换的过程中，根据读取的标定文件，对数据进行修正，
+ *          然后得到点云数据
  *
  *  @param pkt raw packet to Unpack
  *  @param pc shared pointer to point cloud (points are appended)

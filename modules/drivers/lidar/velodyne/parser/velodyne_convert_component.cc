@@ -54,6 +54,7 @@ bool VelodyneConvertComponent::Init() {
 /**
  * @brief 相关话题的回调函数
  * @details 订阅激光雷达原始数据话题scan，获取原始数据，将其解析为点云数据并发布给点云话题
+ *          在转换过程中，会根据读取的标定文件的内容，对数据进一定的修正，然后将得到的点云发布
  * 
  * @param scan_msg 从相关话题订阅的原始数据
  * @return true 解析并发布成功

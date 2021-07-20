@@ -68,6 +68,12 @@ const char* MIN_INTENSITY = "min_intensity";
 const char* FOCAL_DISTANCE = "focal_distance";
 const char* FOCAL_SLOPE = "focal_slope";
 
+/**
+ * @brief 将YAML文件中一个节点的内容进行处理后，填充至关联容器
+ * 
+ * @param node YAML文件中一个节点
+ * @param correction 关联容器
+ */
 void operator>>(const YAML::Node& node,
                 std::pair<int, LaserCorrection>& correction) {
   node[LASER_ID] >> correction.first;
@@ -111,6 +117,10 @@ void operator>>(const YAML::Node& node,
   correction.second.laser_ring = 0;  // clear initially (set later)
 }
 
+/**
+ * @brief 将整个YAML文件的内容填充到Calibration对象中
+ *
+ */
 void operator>>(const YAML::Node& node, Calibration& calibration) {
   int num_lasers = 0;
   node[NUM_LASERS] >> num_lasers;
@@ -157,6 +167,13 @@ void operator>>(const YAML::Node& node, Calibration& calibration) {
   }
 }
 
+/**
+ * @brief 将关联容器中的内容输出至YAML
+ * 
+ * @param out 
+ * @param correction 
+ * @return YAML::Emitter& 
+ */
 YAML::Emitter& operator<<(YAML::Emitter& out,
                           const std::pair<int, LaserCorrection>& correction) {
   out << YAML::BeginMap;
@@ -187,6 +204,10 @@ YAML::Emitter& operator<<(YAML::Emitter& out,
   return out;
 }
 
+/**
+ * @brief 将Calibration保存的所有信息写出至YAML文件
+ * 
+ */
 YAML::Emitter& operator<<(YAML::Emitter& out, const Calibration& calibration) {
   out << YAML::BeginMap;
   out << YAML::Key << NUM_LASERS << YAML::Value
@@ -204,6 +225,11 @@ YAML::Emitter& operator<<(YAML::Emitter& out, const Calibration& calibration) {
   return out;
 }
 
+/**
+ * @brief 读取YAML标定配置文件当中的数据，保存在配置文件当中
+ * 
+ * @param calibration_file 
+ */
 void Calibration::read(const std::string& calibration_file) {
   std::ifstream fin(calibration_file.c_str());
 
