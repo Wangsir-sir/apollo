@@ -2,6 +2,7 @@ syntax = "proto2";
 
 package apollo.static_transform;
 
+// 描述静态变换的外参文件
 message ExtrinsicFile {
   optional string frame_id = 1;
   optional string child_frame_id = 2;
@@ -9,6 +10,7 @@ message ExtrinsicFile {
   optional bool enable = 4;
 }
 
+// 所有的静态变换
 message Conf {
   repeated ExtrinsicFile extrinsic_file = 1;
 }

@@ -112,6 +112,15 @@ class Buffer : public BufferInterface, public tf2::BufferCore {
                             const float timeout_second = 0.01f,
                             std::string* errstr = nullptr) const;
 
+  /**
+   * @brief 获取静态坐标变换
+   * 
+   * @param frame_id 父坐标系
+   * @param child_frame_id 子坐标系
+   * @param tf 坐标变换
+   * @return true 
+   * @return false 
+   */
   bool GetLatestStaticTF(const std::string& frame_id,
                          const std::string& child_frame_id,
                          TransformStamped* tf);
@@ -134,7 +143,7 @@ class Buffer : public BufferInterface, public tf2::BufferCore {
       message_subscriber_tf_static_;
 
   cyber::Time last_update_;
-  std::vector<geometry_msgs::TransformStamped> static_msgs_;
+  std::vector<geometry_msgs::TransformStamped> static_msgs_; ///< 所有静态坐标变换的缓存
 
   DECLARE_SINGLETON(Buffer)
 };  // class

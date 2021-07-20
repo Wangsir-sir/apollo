@@ -25,7 +25,7 @@ TransformBroadcaster::TransformBroadcaster(
     const std::shared_ptr<cyber::Node>& node)
     : node_(node) {
   cyber::proto::RoleAttributes attr;
-  attr.set_channel_name(FLAGS_tf_topic);
+  attr.set_channel_name(FLAGS_tf_topic); // 默认 /tf
   writer_ = node_->CreateWriter<TransformStampeds>(attr);
 }
 
@@ -35,6 +35,11 @@ void TransformBroadcaster::SendTransform(const TransformStamped& transform) {
   SendTransform(transforms);
 }
 
+/**
+ * @brief 将动态坐标变换发布至相关话题
+ * 
+ * @param transforms 
+ */
 void TransformBroadcaster::SendTransform(
     const std::vector<TransformStamped>& transforms) {
   auto message = std::make_shared<TransformStampeds>();

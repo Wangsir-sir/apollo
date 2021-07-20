@@ -6,7 +6,8 @@ header:
     secs: 1422601952
     nsecs: 288805456
   seq: 0
-  frame_id: novatel
+  frame_id: novatel # 父坐标
+# 坐标变换
 transform:
   translation:
     x: -0.1941689746184177
@@ -17,4 +18,4 @@ transform:
     y: 0.00327669
     z: 0.7157
     w: 0.698332
-child_frame_id: velodyne128
+child_frame_id: velodyne128 # 子坐标

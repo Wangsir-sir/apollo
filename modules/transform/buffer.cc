@@ -35,6 +35,12 @@ namespace transform {
 
 Buffer::Buffer() : BufferCore() { Init(); }
 
+/**
+ * @brief 初始化函数，订阅静态变换/tf_static和动态变换/tf消息，
+ *        将订阅得到的所有坐标变换消息转换为ROS消息，存储在tf数据结构中
+ * 
+ * @return int 
+ */
 int Buffer::Init() {
   const std::string node_name =
       absl::StrCat("transform_listener_", Time::Now().ToNanosecond());
@@ -68,6 +74,13 @@ void Buffer::StaticSubscriptionCallback(
   SubscriptionCallbackImpl(msg_evt, true);
 }
 
+/**
+ * @brief 坐标变换消息的回调函数
+ * @details 将话题中的坐标变换消息转换为ROS消息，加入到tf数据结构中
+ * 
+ * @param msg_evt 话题中的坐标变换消息
+ * @param is_static 是否是静态的坐标变换
+ */
 void Buffer::SubscriptionCallbackImpl(
     const std::shared_ptr<const TransformStampeds>& msg_evt, bool is_static) {
   cyber::Time now = Clock::Now();
@@ -83,6 +96,7 @@ void Buffer::SubscriptionCallbackImpl(
   }
   last_update_ = now;
 
+  // 遍历话题中所有的坐标变换，将其转换为ROS消息，加入到tf数据结构中
   for (int i = 0; i < msg_evt->transforms_size(); i++) {
     try {
       geometry_msgs::TransformStamped trans_stamped;
@@ -134,6 +148,12 @@ bool Buffer::GetLatestStaticTF(const std::string& frame_id,
   return false;
 }
 
+/**
+ * @brief 将ROS的tf2消息转换为protobuf消息类型
+ * 
+ * @param tf2_trans_stamped 
+ * @param trans_stamped 
+ */
 void Buffer::TF2MsgToCyber(
     const geometry_msgs::TransformStamped& tf2_trans_stamped,
     TransformStamped& trans_stamped) const {

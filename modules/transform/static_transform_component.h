@@ -40,9 +40,9 @@ class StaticTransformComponent final : public apollo::cyber::Component<> {
   void SendTransform(const std::vector<TransformStamped>& msgtf);
   bool ParseFromYaml(const std::string& file_path, TransformStamped* transform);
 
-  apollo::static_transform::Conf conf_;
+  apollo::static_transform::Conf conf_; ///< 静态变换配置
   std::shared_ptr<cyber::Writer<TransformStampeds>> writer_;
-  TransformStampeds transform_stampeds_;
+  TransformStampeds transform_stampeds_; ///< 准备发布的静态变换
 };
 
 CYBER_REGISTER_COMPONENT(StaticTransformComponent)

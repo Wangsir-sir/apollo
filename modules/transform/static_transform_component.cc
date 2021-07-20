@@ -30,7 +30,7 @@ bool StaticTransformComponent::Init() {
     return false;
   }
   cyber::proto::RoleAttributes attr;
-  attr.set_channel_name(FLAGS_tf_static_topic);
+  attr.set_channel_name(FLAGS_tf_static_topic); // 默认 /tf_static
   attr.mutable_qos_profile()->CopyFrom(
       cyber::transport::QosProfileConf::QOS_PROFILE_TF_STATIC);
   writer_ = node_->CreateWriter<TransformStampeds>(attr);
@@ -38,6 +38,10 @@ bool StaticTransformComponent::Init() {
   return true;
 }
 
+/**
+ * @brief 发布配置参数中所有的静态变换
+ * 
+ */
 void StaticTransformComponent::SendTransforms() {
   std::vector<TransformStamped> tranform_stamped_vec;
   for (auto& extrinsic_file : conf_.extrinsic_file()) {
@@ -54,6 +58,15 @@ void StaticTransformComponent::SendTransforms() {
   SendTransform(tranform_stamped_vec);
 }
 
+/**
+ * @brief 从YAML文件中读取静态变换参数
+ * @details 读取的内容有header.frame_id，child_frame_id，transform
+ * 
+ * @param file_path YAML文件路径
+ * @param transform_stamped 带时间戳的静态变换
+ * @return true 读取成功
+ * @return false 读取失败
+ */
 bool StaticTransformComponent::ParseFromYaml(
     const std::string& file_path, TransformStamped* transform_stamped) {
   if (!cyber::common::PathExists(file_path)) {
@@ -85,8 +98,16 @@ bool StaticTransformComponent::ParseFromYaml(
   return true;
 }
 
+/**
+ * @brief 将配置参数中的静态变换进行发布
+ * @note 配置参数中同一子坐标系只能有一个父坐标系的坐标变换，即必须是树型数据结构
+ * 
+ * @param msgtf 从配置参数中读取的静态变换
+ */
 void StaticTransformComponent::SendTransform(
     const std::vector<TransformStamped>& msgtf) {
+  // 遍历所有配置参数中的静态变换，找到其与transform_stampeds_中子坐标系相匹配的静态变换
+  // 若没有找到，则进行添加，保证同一子坐标系只存在一个坐标变换
   for (auto it_in = msgtf.begin(); it_in != msgtf.end(); ++it_in) {
     bool match_found = false;
     for (auto& it_msg : *transform_stampeds_.mutable_transforms()) {
