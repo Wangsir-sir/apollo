@@ -33,6 +33,12 @@
 namespace apollo {
 namespace localization {
 
+/**
+ * @brief 实现RTK定位的类，汇总GPS和IMU的数据，获得定位消息
+ * @details 接收gps定位消息，根据其时间戳获得最接近的CorrectedImu，
+ *          根据前者的ENU下的点坐标、位姿、线速度，以及后者的欧拉角、ENU下的角速度、朝向和线加速度的获得定位消息
+ * 
+ */
 class RTKLocalization {
  public:
   RTKLocalization();
@@ -74,15 +80,16 @@ class RTKLocalization {
  private:
   std::string module_name_ = "localization";
 
-  std::list<localization::CorrectedImu> imu_list_;
-  size_t imu_list_max_size_ = 50;
+  // 双向链表，在任何位置插入都很快，不支持随机读取
+  std::list<localization::CorrectedImu> imu_list_; ///< 保存CorrectedImu的容器
+  size_t imu_list_max_size_ = 50; ///< CorrectedImu的容器的大小，容器添加元素时若容量超过该大小，容器中时间戳最老的数据会被移除
   std::mutex imu_list_mutex_;
 
   std::list<drivers::gnss::InsStat> gps_status_list_;
   size_t gps_status_list_max_size_ = 10;
   std::mutex gps_status_list_mutex_;
 
-  std::vector<double> map_offset_;
+  std::vector<double> map_offset_; ///< world到map坐标系的偏移量
 
   double gps_time_delay_tolerance_ = 1.0;
   double gps_imu_time_diff_threshold_ = 0.02;
@@ -96,11 +103,11 @@ class RTKLocalization {
   double service_started_time = 0.0;
 
   int64_t localization_seq_num_ = 0;
-  LocalizationEstimate last_localization_result_;
-  LocalizationStatus last_localization_status_result_;
+  LocalizationEstimate last_localization_result_; ///< 根据gps以及imu获得的最新定位消息
+  LocalizationStatus last_localization_status_result_; ///< 根据gps以及InsStat获得的最新定位状态消息
 
   int localization_publish_freq_ = 100;
-  int report_threshold_err_num_ = 10;
+  int report_threshold_err_num_ = 10; ///< 消息延迟的帧数
   int service_delay_threshold = 1;
   apollo::common::monitor::MonitorLogBuffer monitor_logger_;
 

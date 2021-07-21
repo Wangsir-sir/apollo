@@ -46,13 +46,13 @@ bool NDTLocalizationComponent::Init() {
 }
 
 bool NDTLocalizationComponent::InitConfig() {
-  localization_topic_ = FLAGS_localization_topic;
-  lidar_topic_ = FLAGS_lidar_topic;
-  lidar_pose_topic_ = FLAGS_localization_ndt_topic;
-  broadcast_tf_frame_id_ = FLAGS_broadcast_tf_frame_id;
-  broadcast_tf_child_frame_id_ = FLAGS_broadcast_tf_child_frame_id;
-  odometry_status_topic_ = FLAGS_ins_stat_topic;
-  localization_status_topic_ = FLAGS_localization_msf_status;
+  localization_topic_ = FLAGS_localization_topic; // 发布/apollo/localization/pose
+  lidar_topic_ = FLAGS_lidar_topic; // 订阅/apollo/sensor/lidar128/compensator/PointCloud2
+  lidar_pose_topic_ = FLAGS_localization_ndt_topic; // 发布/apollo/localization/ndt_lidar
+  broadcast_tf_frame_id_ = FLAGS_broadcast_tf_frame_id;// world
+  broadcast_tf_child_frame_id_ = FLAGS_broadcast_tf_child_frame_id;// localization
+  odometry_status_topic_ = FLAGS_ins_stat_topic;// 订阅/apollo/sensor/gnss/ins_stat
+  localization_status_topic_ = FLAGS_localization_msf_status; // 发布/apollo/localization/msf_status
 
   localization_->Init();
 

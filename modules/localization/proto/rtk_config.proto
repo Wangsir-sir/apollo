@@ -3,16 +3,16 @@ syntax = "proto2";
 package apollo.localization.rtk_config;
 
 message Config {
-  optional string localization_topic = 1;
-  optional string localization_status_topic = 11;
-  optional string imu_topic = 2;
-  optional string gps_topic = 3;
-  optional string gps_status_topic = 12;
-  optional string broadcast_tf_frame_id = 4;
-  optional string broadcast_tf_child_frame_id = 5;
-  optional int32 imu_list_max_size = 6;
-  optional double gps_imu_time_diff_threshold = 7;
-  optional double map_offset_x = 8;
+  optional string localization_topic = 1; // 输出的定位话题
+  optional string localization_status_topic = 11; // 输出的定位状态话题
+  optional string imu_topic = 2; // 订阅的IMU消息话题
+  optional string gps_topic = 3; // 订阅的GPS消息话题
+  optional string gps_status_topic = 12; // 订阅的GPS定位状态话题
+  optional string broadcast_tf_frame_id = 4; // 广播的父坐标系
+  optional string broadcast_tf_child_frame_id = 5; // 广播的子坐标系
+  optional int32 imu_list_max_size = 6; // IMU消息容器的大小
+  optional double gps_imu_time_diff_threshold = 7; // GPS和IMU消息时间戳差值的阈值
+  optional double map_offset_x = 8; // world到mpa坐标系的偏差值
   optional double map_offset_y = 9;
   optional double map_offset_z = 10;
 }

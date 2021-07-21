@@ -38,6 +38,12 @@ bool RTKLocalizationComponent::Init() {
   return true;
 }
 
+/**
+ * @brief 根据配置文件完成相关数据成员的初始化
+ * 
+ * @return true 
+ * @return false 
+ */
 bool RTKLocalizationComponent::InitConfig() {
   rtk_config::Config rtk_config;
   if (!apollo::cyber::common::GetProtoFromFile(config_file_path_,
@@ -59,6 +65,18 @@ bool RTKLocalizationComponent::InitConfig() {
   return true;
 }
 
+/**
+ * @brief 初始化发布者和订阅者
+ * @details 订阅的话题：
+ *          - IMU话题： /apollo/sensor/gnss/corrected_imu 
+ *          - GPS状态话题： /apollo/sensor/gnss/ins_stat
+ *          发布的话题：
+ *          - RTK定位话题：/apollo/localization/pose
+ *          - RTK定位状态话题：/apollo/localization/msf_status
+ * 
+ * @return true 
+ * @return false 
+ */
 bool RTKLocalizationComponent::InitIO() {
   corrected_imu_listener_ = node_->CreateReader<localization::CorrectedImu>(
       imu_topic_, std::bind(&RTKLocalization::ImuCallback, localization_.get(),
@@ -80,6 +98,13 @@ bool RTKLocalizationComponent::InitIO() {
   return true;
 }
 
+/**
+ * @brief GNSS定位话题 /apollo/sensor/gnss/odometry的回调函数
+ * 
+ * @param gps_msg GNSS定位消息
+ * @return true 
+ * @return false 
+ */
 bool RTKLocalizationComponent::Proc(
     const std::shared_ptr<localization::Gps>& gps_msg) {
   localization_->GpsCallback(gps_msg);
@@ -100,6 +125,11 @@ bool RTKLocalizationComponent::Proc(
   return true;
 }
 
+/**
+ * @brief 将RTK定位消息作为world坐标系到localization的动态坐标变换进行广播
+ * 
+ * @param localization RTK定位消息
+ */
 void RTKLocalizationComponent::PublishPoseBroadcastTF(
     const LocalizationEstimate& localization) {
   // broadcast tf message
@@ -124,11 +154,21 @@ void RTKLocalizationComponent::PublishPoseBroadcastTF(
   tf2_broadcaster_->SendTransform(tf2_msg);
 }
 
+/**
+ * @brief 发布RTK定位消息
+ * 
+ * @param localization 
+ */
 void RTKLocalizationComponent::PublishPoseBroadcastTopic(
     const LocalizationEstimate& localization) {
   localization_talker_->Write(localization);
 }
 
+/**
+ * @brief 发布RTK定位状态消息
+ * 
+ * @param localization_status 
+ */
 void RTKLocalizationComponent::PublishLocalizationStatus(
     const LocalizationStatus& localization_status) {
   localization_status_talker_->Write(localization_status);

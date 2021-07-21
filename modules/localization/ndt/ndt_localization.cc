@@ -36,17 +36,18 @@ void NDTLocalization::Init() {
   tf_buffer_->Init();
 
   resolution_id_ = 0;
-  zone_id_ = FLAGS_local_utm_zone_id;
-  online_resolution_ = FLAGS_online_resolution;
-  ndt_debug_log_flag_ = FLAGS_ndt_debug_log_flag;
-  tf_source_frame_id_ = FLAGS_broadcast_tf_frame_id;
-  tf_target_frame_id_ = FLAGS_broadcast_tf_child_frame_id;
-  std::string lidar_height_file = FLAGS_lidar_height_file;
-  std::string lidar_extrinsics_file = FLAGS_lidar_extrinsics_file;
-  bad_score_count_threshold_ = FLAGS_ndt_bad_score_count_threshold;
-  warnning_ndt_score_ = FLAGS_ndt_warnning_ndt_score;
-  error_ndt_score_ = FLAGS_ndt_error_ndt_score;
+  zone_id_ = FLAGS_local_utm_zone_id; // 10
+  online_resolution_ = FLAGS_online_resolution; // 2.0
+  ndt_debug_log_flag_ = FLAGS_ndt_debug_log_flag; // false
+  tf_source_frame_id_ = FLAGS_broadcast_tf_frame_id; // world
+  tf_target_frame_id_ = FLAGS_broadcast_tf_child_frame_id; // localization
+  std::string lidar_height_file = FLAGS_lidar_height_file; // /apollo/modules/localization/msf/params/velodyne_params/velodyne64_height.yaml
+  std::string lidar_extrinsics_file = FLAGS_lidar_extrinsics_file; // /apollo/modules/localization/msf/params/velodyne_params/velodyne64_novatel_extrinsics_example.yaml
+  bad_score_count_threshold_ = FLAGS_ndt_bad_score_count_threshold; // 10
+  warnning_ndt_score_ = FLAGS_ndt_warnning_ndt_score; // 1.0
+  error_ndt_score_ = FLAGS_ndt_error_ndt_score; // 2.0
 
+  // /apollo/modules/map/data/demo/ndt_map/local_map
   std::string map_path_ =
       FLAGS_map_dir + "/" + FLAGS_ndt_map_dir + "/" + FLAGS_local_map_name;
   AINFO << "map folder: " << map_path_;
@@ -70,7 +71,7 @@ void NDTLocalization::Init() {
     AWARN << "LocalizationLidar: Fail to load the lidar"
              " height file: "
           << lidar_height_file << " Will use default value!";
-    lidar_height_.height = FLAGS_lidar_height_default;
+    lidar_height_.height = FLAGS_lidar_height_default; // 1.80
   }
 
   // try load zone id from local_map folder

@@ -30,3 +30,5 @@ compress_conf {
     output_channel: "/apollo/sensor/camera/front_6mm/image/compressed"
     image_pool_size: 100
 }
+
+# 定义： modules/drivers/camera/proto/config.proto

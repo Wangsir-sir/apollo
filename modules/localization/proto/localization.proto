@@ -72,7 +72,7 @@ enum MeasureState {
 
 message LocalizationStatus {
   optional apollo.common.Header header = 1;
-  optional MeasureState fusion_status = 2;
+  optional MeasureState fusion_status = 2; // 融合的状态
   optional MeasureState gnss_status = 3 [deprecated = true];
   optional MeasureState lidar_status = 4 [deprecated = true];
   // The time of pose measurement, seconds since 1970-1-1 (UNIX time).
